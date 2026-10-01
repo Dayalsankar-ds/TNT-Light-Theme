@@ -21,3 +21,6 @@ npm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# raw source footage (hero uses public/video/frames-v7)
+/Video/First clip.mp4
