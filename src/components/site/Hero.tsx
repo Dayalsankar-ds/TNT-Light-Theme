@@ -54,14 +54,23 @@
  * starting to play"): the fallback first shipped preloading all 289 frames
  * before showing any movement — ~3.1s at 50Mbps, and longer on a Mac in Low
  * Power Mode, which also throttles network and decode. Now frames load in
- * order, LOAD_CONCURRENCY at a time, and playback starts once the first
- * START_BUFFER are in. The rest keep loading during playback; if the next
+ * order, LOAD_CONCURRENCY at a time, and playback starts as soon as the
+ * measured download rate says the rest will arrive before they're due:
+ * (frames still to load ÷ recent frames/ms) ≤ the full playback duration,
+ * with a floor of MIN_START_BUFFER frames. A fixed 60-frame buffer was
+ * tried first and cost ~0.9s at 50Mbps — a connection that delivers frames
+ * ~3× faster than playback consumes them needs almost no head start, while
+ * a slow one now waits just long enough instead. The rest keep loading
+ * during playback; if the next
  * frame isn't loaded yet, the timeline holds on the last loaded one
  * (shifting the start time forward) rather than skipping ahead, so a slow
  * connection briefly pauses instead of jumping.
  *
  * REDUCED MOTION: under `prefers-reduced-motion` neither path runs — the
- * poster stays up as a static hero and nothing auto-scrolls.
+ * hero rests on its first frame and nothing auto-scrolls. Because the video
+ * carries `autoPlay` (see the video-path effect), it may have begun before
+ * hydration; the effect pauses and rewinds it, so at most a fraction of a
+ * second plays first.
  *
  * FULL-BLEED UNDER THE FIXED NAV (2026-10-01, on request — "I can see dark
  * space on the top of this video clip"): this first shipped sitting inside
@@ -145,10 +154,14 @@ const FRAME_COUNT = 289;
 const FRAME_FPS = 55;
 const FRAME_DURATION = 1000 / FRAME_FPS;
 const FRAMES_TOTAL_MS = FRAME_COUNT * FRAME_DURATION;
-/** Fallback playback starts once this many frames from the start (~1.1s of
- *  playback, ~2MB) are loaded, instead of waiting for all 9.6MB — see
- *  STREAMED FALLBACK below. */
-const START_BUFFER = 60;
+/** Fallback playback never starts with fewer than this many frames loaded
+ *  (~0.2s of playback) — see STREAMED FALLBACK below. */
+const MIN_START_BUFFER = 12;
+/** Download rate is measured over the most recent this-many frames, not
+ *  since loading began — the first requests compete with the page's own JS,
+ *  fonts and images, so an all-time average badly underestimates the rate
+ *  the rest of the frames will actually arrive at. */
+const RATE_WINDOW = 20;
 /** In-flight frame requests. Kept small so frames arrive roughly in order —
  *  firing all 289 at once lets HTTP/2 deliver them in any order, which
  *  delays the contiguous run playback needs. */
@@ -190,7 +203,7 @@ export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   // "video" until play() is refused, then "frames" — see AUTOPLAY BLOCKED.
   const [mode, setMode] = useState<"video" | "frames">("video");
-  // Frame fallback only: true once START_BUFFER frames have loaded.
+  // Frame fallback only: true once enough frames have loaded to start.
   // `contiguousRef` is the length of the unbroken loaded run from frame 0 —
   // the furthest playback may go.
   const [framesReady, setFramesReady] = useState(false);
@@ -221,20 +234,35 @@ export default function Hero() {
   }, []);
   useEffect(() => () => window.clearTimeout(fallbackTimerRef.current), []);
 
-  // Video path. play() is called straight away rather than waiting for
-  // `canplaythrough` (Safari may not preload enough to fire it); a rejection
-  // means autoplay was refused, so hand over to the frame sequence.
+  // Video path. The element carries `autoPlay`, so most browsers start it
+  // before this effect even runs (i.e. before hydration — ~0.5s sooner than
+  // waiting on JS). play() is still called here, straight away rather than
+  // waiting for `canplaythrough` (Safari may not preload enough to fire it):
+  // it's a no-op if autoplay already started, and its rejection is the
+  // signal that autoplay was refused, so hand over to the frame sequence.
+  // Reduced motion: stop it and rewind, back to the static first frame.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      video.pause();
+      video.currentTime = 0;
+      return;
+    }
 
     let cancelled = false;
     const onEnded = () => finish();
     video.addEventListener("ended", onEnded);
     video.muted = true; // property, not just the attribute — some engines check only this
     video.play().catch(() => {
-      if (!cancelled) setMode("frames");
+      if (cancelled) return;
+      // Stop the now-pointless video download (preload="auto" would keep
+      // pulling all 4.9MB) so the fallback frames get the full bandwidth —
+      // at 10Mbps that cut the fallback's start delay from ~9.5s to ~5.5s.
+      // The <img> overlay covers the element from here on.
+      video.removeAttribute("src");
+      video.load();
+      setMode("frames");
     });
     return () => {
       cancelled = true;
@@ -243,14 +271,16 @@ export default function Hero() {
   }, [finish]);
 
   // Frame fallback, step 1: load frames in order, a few at a time, and
-  // flip `framesReady` once the first START_BUFFER are in (or all of them,
-  // if that comes first) — see STREAMED FALLBACK above.
+  // flip `framesReady` once the download rate says playback won't outrun it
+  // (or everything has loaded) — see STREAMED FALLBACK above.
   useEffect(() => {
     if (mode !== "frames") return;
     let cancelled = false;
     const loaded = new Array<boolean>(FRAME_COUNT).fill(false);
     contiguousRef.current = 0;
     const images: HTMLImageElement[] = [];
+    const loadStart = performance.now();
+    const settledAt: number[] = [];
     let next = 0;
 
     const loadNext = () => {
@@ -260,10 +290,19 @@ export default function Hero() {
       const done = () => {
         if (cancelled) return;
         loaded[i] = true; // a failed frame counts too — it must not stall playback
+        const now = performance.now();
+        settledAt.push(now);
         while (contiguousRef.current < FRAME_COUNT && loaded[contiguousRef.current]) {
           contiguousRef.current += 1;
         }
-        if (contiguousRef.current >= Math.min(START_BUFFER, FRAME_COUNT)) setFramesReady(true);
+        const have = contiguousRef.current;
+        const n = settledAt.length;
+        const windowStart = n > RATE_WINDOW ? settledAt[n - 1 - RATE_WINDOW] : loadStart;
+        const framesPerMs = Math.min(n, RATE_WINDOW) / Math.max(1, now - windowStart);
+        const remainingMs = (FRAME_COUNT - have) / framesPerMs;
+        if (have === FRAME_COUNT || (have >= MIN_START_BUFFER && remainingMs <= FRAMES_TOTAL_MS)) {
+          setFramesReady(true);
+        }
         loadNext();
       };
       img.onload = done;
@@ -341,6 +380,7 @@ export default function Hero() {
         ref={videoRef}
         src={VIDEO_SRC}
         poster={POSTER_SRC}
+        autoPlay
         muted
         playsInline
         preload="auto"
