@@ -50,6 +50,16 @@
  * video never download them. Both paths end in the same auto-scroll +
  * collapse.
  *
+ * STREAMED FALLBACK (2026-10-01, on request — "There is a hold before
+ * starting to play"): the fallback first shipped preloading all 289 frames
+ * before showing any movement — ~3.1s at 50Mbps, and longer on a Mac in Low
+ * Power Mode, which also throttles network and decode. Now frames load in
+ * order, LOAD_CONCURRENCY at a time, and playback starts once the first
+ * START_BUFFER are in. The rest keep loading during playback; if the next
+ * frame isn't loaded yet, the timeline holds on the last loaded one
+ * (shifting the start time forward) rather than skipping ahead, so a slow
+ * connection briefly pauses instead of jumping.
+ *
  * REDUCED MOTION: under `prefers-reduced-motion` neither path runs — the
  * poster stays up as a static hero and nothing auto-scrolls.
  *
@@ -135,6 +145,14 @@ const FRAME_COUNT = 289;
 const FRAME_FPS = 55;
 const FRAME_DURATION = 1000 / FRAME_FPS;
 const FRAMES_TOTAL_MS = FRAME_COUNT * FRAME_DURATION;
+/** Fallback playback starts once this many frames from the start (~1.1s of
+ *  playback, ~2MB) are loaded, instead of waiting for all 9.6MB — see
+ *  STREAMED FALLBACK below. */
+const START_BUFFER = 60;
+/** In-flight frame requests. Kept small so frames arrive roughly in order —
+ *  firing all 289 at once lets HTTP/2 deliver them in any order, which
+ *  delays the contiguous run playback needs. */
+const LOAD_CONCURRENCY = 8;
 const framePath = (n: number) => `${FRAME_DIR}/${String(n).padStart(5, "0")}.webp`;
 
 /** How far #family's top sits under the bar's bottom edge on landing —
@@ -172,8 +190,11 @@ export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   // "video" until play() is refused, then "frames" — see AUTOPLAY BLOCKED.
   const [mode, setMode] = useState<"video" | "frames">("video");
-  // Frame fallback only: true once every frame has preloaded.
+  // Frame fallback only: true once START_BUFFER frames have loaded.
+  // `contiguousRef` is the length of the unbroken loaded run from frame 0 —
+  // the furthest playback may go.
   const [framesReady, setFramesReady] = useState(false);
+  const contiguousRef = useRef(0);
   // HERO COLLAPSES AFTER LANDING — see that docblock note above.
   // `removedRef` is the height the collapse takes out, measured just before
   // it, so the layout effect below can shift scrollY by exactly that much.
@@ -221,26 +242,37 @@ export default function Hero() {
     };
   }, [finish]);
 
-  // Frame fallback, step 1: preload every frame before playback starts — a
-  // mid-sequence stutter waiting on a late frame would be worse than a
-  // longer, one-time wait up front.
+  // Frame fallback, step 1: load frames in order, a few at a time, and
+  // flip `framesReady` once the first START_BUFFER are in (or all of them,
+  // if that comes first) — see STREAMED FALLBACK above.
   useEffect(() => {
     if (mode !== "frames") return;
     let cancelled = false;
-    const images: HTMLImageElement[] = new Array(FRAME_COUNT);
-    let settled = 0;
-    for (let i = 0; i < FRAME_COUNT; i++) {
+    const loaded = new Array<boolean>(FRAME_COUNT).fill(false);
+    contiguousRef.current = 0;
+    const images: HTMLImageElement[] = [];
+    let next = 0;
+
+    const loadNext = () => {
+      if (cancelled || next >= FRAME_COUNT) return;
+      const i = next++;
       const img = new Image();
       const done = () => {
         if (cancelled) return;
-        settled += 1;
-        if (settled === FRAME_COUNT) setFramesReady(true);
+        loaded[i] = true; // a failed frame counts too — it must not stall playback
+        while (contiguousRef.current < FRAME_COUNT && loaded[contiguousRef.current]) {
+          contiguousRef.current += 1;
+        }
+        if (contiguousRef.current >= Math.min(START_BUFFER, FRAME_COUNT)) setFramesReady(true);
+        loadNext();
       };
       img.onload = done;
-      img.onerror = done; // a missing frame must not deadlock the preload
+      img.onerror = done;
       img.src = framePath(i);
-      images[i] = img;
-    }
+      images.push(img);
+    };
+    for (let k = 0; k < LOAD_CONCURRENCY; k++) loadNext();
+
     return () => {
       cancelled = true;
       for (const img of images) {
@@ -253,17 +285,27 @@ export default function Hero() {
 
   // Frame fallback, step 2: the one-time playback. Elapsed-time driven, so a
   // dropped rAF tick shows a later frame next time rather than falling
-  // behind permanently.
+  // behind permanently — but never past the loaded run: if the frame that's
+  // due hasn't arrived, hold on the last loaded one and push the start time
+  // forward, so playback resumes from there instead of jumping.
   useEffect(() => {
     if (!framesReady) return;
     let startTime: number | null = null;
+    let lastNow = 0;
+    let shown = -1;
     let rafId: number;
     const tick = (now: number) => {
-      if (startTime === null) startTime = now;
-      const elapsed = now - startTime;
-      const index = Math.min(Math.floor(elapsed / FRAME_DURATION), FRAME_COUNT - 1);
-      if (imgRef.current) imgRef.current.src = framePath(index);
-      if (elapsed < FRAMES_TOTAL_MS) {
+      if (startTime === null) startTime = lastNow = now;
+      const due = Math.min(Math.floor((now - startTime) / FRAME_DURATION), FRAME_COUNT - 1);
+      const available = contiguousRef.current - 1;
+      if (due > available) startTime += now - lastNow; // stalled: freeze the timeline
+      lastNow = now;
+      const index = Math.min(due, available);
+      if (index !== shown && imgRef.current) {
+        imgRef.current.src = framePath(index);
+        shown = index;
+      }
+      if (index < FRAME_COUNT - 1 || now - startTime < FRAMES_TOTAL_MS) {
         rafId = requestAnimationFrame(tick);
       } else {
         finish();
