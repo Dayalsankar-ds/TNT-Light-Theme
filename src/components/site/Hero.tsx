@@ -36,10 +36,22 @@
  * `loop`), and starts on `canplaythrough` so it doesn't stall partway. A
  * reload plays it again from the start; there is no replay affordance.
  *
- * REDUCED MOTION / AUTOPLAY BLOCKED: under `prefers-reduced-motion` the
- * video is never played — the poster stays up as a static hero and nothing
- * auto-scrolls. Same if `play()` is rejected (e.g. iOS Low Power Mode blocks
- * autoplay): the poster stays, and the visitor scrolls on normally.
+ * AUTOPLAY BLOCKED → FRAME-SEQUENCE FALLBACK (2026-10-01, on request —
+ * "There is no movement on Hero section Video!" / "It stays in first frame"):
+ * Safari in macOS/iOS Low Power Mode refuses autoplay even for muted
+ * video, and the first video version also waited on `canplaythrough`, which
+ * Safari may never fire when it isn't allowed to preload — so the poster
+ * just sat there. Now `play()` is called directly (it starts the load on its
+ * own), and if it rejects, the hero falls back to the previous WebP frame
+ * sequence (public/video/frames-v8: 289 frames, 1024px/q55, 9.6MB, stepped
+ * at 55fps by a rAF loop swapping an <img> over the poster). A JS-driven
+ * image swap isn't subject to autoplay policy, so that path always moves.
+ * The frames are only fetched on that fallback path — browsers that play the
+ * video never download them. Both paths end in the same auto-scroll +
+ * collapse.
+ *
+ * REDUCED MOTION: under `prefers-reduced-motion` neither path runs — the
+ * poster stays up as a static hero and nothing auto-scrolls.
  *
  * FULL-BLEED UNDER THE FIXED NAV (2026-10-01, on request — "I can see dark
  * space on the top of this video clip"): this first shipped sitting inside
@@ -108,12 +120,22 @@
  * restores the full hero and plays it again, per the one-time-playback spec.
  */
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { getLenis } from "@/components/SmoothScroll";
 import { CHROME_H } from "@/components/site/chrome";
 
 const VIDEO_SRC = "/video/hero.mp4";
 const POSTER_SRC = "/video/hero-poster.webp";
+
+/** Fallback frame sequence — see AUTOPLAY BLOCKED above. Every other frame
+ *  of the original 110fps sequence, so 55fps gives the same speed and
+ *  duration (~5.25s) as hero.mp4. */
+const FRAME_DIR = "/video/frames-v8";
+const FRAME_COUNT = 289;
+const FRAME_FPS = 55;
+const FRAME_DURATION = 1000 / FRAME_FPS;
+const FRAMES_TOTAL_MS = FRAME_COUNT * FRAME_DURATION;
+const framePath = (n: number) => `${FRAME_DIR}/${String(n).padStart(5, "0")}.webp`;
 
 /** How far #family's top sits under the bar's bottom edge on landing —
  *  comfortably past the nav's reveal line, not balanced on it. */
@@ -146,51 +168,110 @@ function scrollToFamilyStrip(onComplete: () => void) {
 
 export default function Hero() {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
+  // "video" until play() is refused, then "frames" — see AUTOPLAY BLOCKED.
+  const [mode, setMode] = useState<"video" | "frames">("video");
+  // Frame fallback only: true once every frame has preloaded.
+  const [framesReady, setFramesReady] = useState(false);
   // HERO COLLAPSES AFTER LANDING — see that docblock note above.
   // `removedRef` is the height the collapse takes out, measured just before
   // it, so the layout effect below can shift scrollY by exactly that much.
   const [collapsed, setCollapsed] = useState(false);
   const removedRef = useRef(0);
+  const finishedRef = useRef(false);
+  const fallbackTimerRef = useRef<number | undefined>(undefined);
 
-  // The one-time playback. Starts once the browser reports it can play
-  // through without buffering; ends by handing off to scrollToFamilyStrip()
-  // rather than holding on the final frame. Reduced motion / a rejected
-  // play() leave the poster up — see REDUCED MOTION above.
+  // Shared ending for both paths: auto-scroll to #family, then collapse
+  // (or collapse after COLLAPSE_FALLBACK_MS if that scroll is interrupted).
+  const finish = useCallback(() => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    let done = false;
+    const collapse = () => {
+      if (done) return;
+      done = true;
+      window.clearTimeout(fallbackTimerRef.current);
+      removedRef.current = (sectionRef.current?.offsetHeight ?? 0) - LANDING_OFFSET;
+      setCollapsed(true);
+    };
+    scrollToFamilyStrip(collapse);
+    fallbackTimerRef.current = window.setTimeout(collapse, COLLAPSE_FALLBACK_MS);
+  }, []);
+  useEffect(() => () => window.clearTimeout(fallbackTimerRef.current), []);
+
+  // Video path. play() is called straight away rather than waiting for
+  // `canplaythrough` (Safari may not preload enough to fire it); a rejection
+  // means autoplay was refused, so hand over to the frame sequence.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    let fallbackId: number | undefined;
-    let done = false;
-    const collapse = () => {
-      if (done) return;
-      done = true;
-      window.clearTimeout(fallbackId);
-      removedRef.current = (sectionRef.current?.offsetHeight ?? 0) - LANDING_OFFSET;
-      setCollapsed(true);
-    };
-    const onEnded = () => {
-      scrollToFamilyStrip(collapse);
-      fallbackId = window.setTimeout(collapse, COLLAPSE_FALLBACK_MS);
-    };
-    let started = false;
-    const start = () => {
-      if (started) return;
-      started = true;
-      video.play().catch(() => {});
-    };
-
+    let cancelled = false;
+    const onEnded = () => finish();
     video.addEventListener("ended", onEnded);
-    video.addEventListener("canplaythrough", start);
-    if (video.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) start();
+    video.muted = true; // property, not just the attribute — some engines check only this
+    video.play().catch(() => {
+      if (!cancelled) setMode("frames");
+    });
     return () => {
+      cancelled = true;
       video.removeEventListener("ended", onEnded);
-      video.removeEventListener("canplaythrough", start);
-      window.clearTimeout(fallbackId);
     };
-  }, []);
+  }, [finish]);
+
+  // Frame fallback, step 1: preload every frame before playback starts — a
+  // mid-sequence stutter waiting on a late frame would be worse than a
+  // longer, one-time wait up front.
+  useEffect(() => {
+    if (mode !== "frames") return;
+    let cancelled = false;
+    const images: HTMLImageElement[] = new Array(FRAME_COUNT);
+    let settled = 0;
+    for (let i = 0; i < FRAME_COUNT; i++) {
+      const img = new Image();
+      const done = () => {
+        if (cancelled) return;
+        settled += 1;
+        if (settled === FRAME_COUNT) setFramesReady(true);
+      };
+      img.onload = done;
+      img.onerror = done; // a missing frame must not deadlock the preload
+      img.src = framePath(i);
+      images[i] = img;
+    }
+    return () => {
+      cancelled = true;
+      for (const img of images) {
+        img.onload = null;
+        img.onerror = null;
+        img.src = "";
+      }
+    };
+  }, [mode]);
+
+  // Frame fallback, step 2: the one-time playback. Elapsed-time driven, so a
+  // dropped rAF tick shows a later frame next time rather than falling
+  // behind permanently.
+  useEffect(() => {
+    if (!framesReady) return;
+    let startTime: number | null = null;
+    let rafId: number;
+    const tick = (now: number) => {
+      if (startTime === null) startTime = now;
+      const elapsed = now - startTime;
+      const index = Math.min(Math.floor(elapsed / FRAME_DURATION), FRAME_COUNT - 1);
+      if (imgRef.current) imgRef.current.src = framePath(index);
+      if (elapsed < FRAMES_TOTAL_MS) {
+        rafId = requestAnimationFrame(tick);
+      } else {
+        finish();
+      }
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [framesReady, finish]);
 
   // The collapse's scroll compensation. Runs before paint, so the shorter
   // section and the shifted scrollY land in the same frame — no visible jump.
@@ -225,6 +306,16 @@ export default function Hero() {
         aria-label="TNT Crane & Rigging"
         className="absolute inset-0 h-full w-full object-cover"
       />
+      {mode === "frames" && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          ref={imgRef}
+          src={framePath(0)}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
     </section>
   );
 }
