@@ -17,6 +17,19 @@
  * 2.25x the payload on top of the quality bump, which is a separate,
  * heavier tradeoff than "look less compressed" calls for.
  *
+ * FRAMES-V8, LIGHTER + SMOOTHER (2026-10-01, on request — "reduce the
+ * quality... in reasonable size. I want smooth movement"): v7 was 578 frames
+ * at 1280px/q75, 39MB, all preloaded before playback, then stepped at 110fps
+ * — faster than a 60Hz display can show, so roughly every other frame was
+ * downloaded and decoded only to never reach the screen. v8 keeps every
+ * other v7 frame (even indices 0–576; v7's 577, the never-shown logo card,
+ * is dropped outright) re-encoded at 1024px/q55: 289 frames, 9.6MB, played
+ * at 55fps so total duration and on-screen speed are unchanged (~5.25s).
+ * A quarter of the payload means a much shorter wait before playback, and
+ * a smaller decode per swap means fewer dropped frames while it runs.
+ * v8 was derived from the v7 WebPs with sharp (no ffmpeg on this machine);
+ * a future re-cut should go back to the source MP4s instead.
+ *
  * FULLY AUTOMATED, NOT SCROLL-DRIVEN (on request — "I don't want have user
  * interaction while playing. Every thing automated from first frame to last
  * frame. User can experience only one time. After that they need to reload
@@ -84,11 +97,11 @@
  *
  * AUTO-SCROLL ON COMPLETION, SKIPPING THE TRUE LAST FRAME (2026-10-01, on
  * request — "auto scroll up to nav bar visible. User no need to see last
- * frame of second clip"): playback never actually shows frame 577 (the held
- * TNT-logo card) — `LAST_VISIBLE_FRAME` caps the displayed index one frame
- * short of it, and the instant elapsed time would reach the end,
- * `scrollToFamilyStrip()` fires immediately rather than holding on whatever
- * frame is showing.
+ * frame of second clip"): playback never actually shows the held TNT-logo
+ * card (v7's frame 577 — not carried into v8 at all, see FRAMES-V8), so
+ * `LAST_VISIBLE_FRAME` is simply v8's final frame, and the instant elapsed
+ * time would reach the end, `scrollToFamilyStrip()` fires immediately rather
+ * than holding on whatever frame is showing.
  *
  * LANDING SPOT, BACK AND FORTH (2026-10-01, same day, three requests in a
  * row): first landed on #family (FamilyStripV2, the logo strip right under
@@ -135,21 +148,23 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { getLenis } from "@/components/SmoothScroll";
 import { CHROME_H } from "@/components/site/chrome";
 
-const FRAME_DIR = "/video/frames-v7";
-const FRAME_COUNT = 578;
-/** First index of clip 2 in the merged sequence (clip 1 is 00000–00264). */
-const CLIP_SPLIT = 265;
-/** Clip 1's playback rate (frames 00000–00264). Raised 40 → 110 (2026-10-01,
+const FRAME_DIR = "/video/frames-v8";
+const FRAME_COUNT = 289;
+/** First index of clip 2 in the merged sequence (clip 1 is 00000–00132). */
+const CLIP_SPLIT = 133;
+/** Clip 1's playback rate (frames 00000–00132). Raised 40 → 110 (2026-10-01,
  *  "increase the speed of the first clip too, I want full speed on both
  *  clip") — now equal to clip 2's rate, i.e. uniformly fast rather than
  *  clip 1 being the slower of the two. */
-const CLIP1_FPS = 110;
-/** Clip 2's playback rate (frames 00265–00577). Raised 24 → 40 → 70 → 110
+const CLIP1_FPS = 55;
+/** Clip 2's playback rate (frames 00133–00288). Raised 24 → 40 → 70 → 110
  *  across three earlier requests, then matched by CLIP1_FPS above so both
- *  clips now play at the same (fast) rate. */
-const CLIP2_FPS = 110;
+ *  clips now play at the same (fast) rate. Both halved 110 → 55 with the
+ *  frames-v8 every-other-frame cut (see FRAMES-V8 note) — same on-screen
+ *  speed, since there are half as many frames to step through. */
+const CLIP2_FPS = 55;
 /** Never actually displayed — see AUTO-SCROLL note above. */
-const LAST_VISIBLE_FRAME = FRAME_COUNT - 2;
+const LAST_VISIBLE_FRAME = FRAME_COUNT - 1;
 
 const CLIP1_FRAME_DURATION = 1000 / CLIP1_FPS;
 const CLIP2_FRAME_DURATION = 1000 / CLIP2_FPS;
