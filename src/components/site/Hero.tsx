@@ -12,7 +12,7 @@
  * still hitched: every swap is a main-thread image decode, and the whole
  * sequence had to download before playback could start. Now both clips are
  * joined into one H.264 MP4 (public/video/hero.mp4, 1920×1080, 60fps,
- * CRF 26, 4.3MB, +faststart), which the browser's hardware decoder plays on
+ * CRF 26, 3.7MB, +faststart), which the browser's hardware decoder plays on
  * its own compositor clock — no per-frame JS at all. Encoded from the source
  * MP4s with ffmpeg:
  *
@@ -29,13 +29,16 @@
  *     if(lt(N,48),N,if(lt(N,68),48+20*log(1+(N-48)/20),
  *     if(lt(N,208),48+20*log(2)+(N-68)/2,
  *     if(lt(N,228),118+20*log(2)+20*log(2/(2-(N-208)/20)),
- *     118+40*log(2)+(N-228)))))/110/TB
+ *     if(lt(N,265),118+40*log(2)+(N-228),
+ *     if(lt(N,285),155+40*log(2)+20*log(1+(N-265)/20),
+ *     if(lt(N,529),155+60*log(2)+(N-285)/2,
+ *     277+60*log(2)+(48/1.4)*log(2/(2-1.4*(N-529)/48)))))))))/110/TB
  *
  * `trim=end_frame=312` drops clip 2's final frame (the held TNT-logo card —
  * see AUTO-SCROLL below); <SPEED_EXPR> bakes in the playback speed,
- * including the crane-rotation speed-up (see PLAYBACK SPEED below). With no
- * speed-up it would simply be `setpts=PTS*24/110`. hero-poster.webp is the
- * video's first frame. Result: 270 frames, 4.50s.
+ * including the crane-rotation and clip 2 speed changes (see PLAYBACK SPEED
+ * below). With no speed changes it would simply be `setpts=PTS*24/110`.
+ * hero-poster.webp is the video's first frame. Result: 196 frames, 3.27s.
  *
  * FULLY AUTOMATED, NOT SCROLL-DRIVEN (on request — "I don't want have user
  * interaction while playing. Every thing automated from first frame to last
@@ -53,10 +56,10 @@
  * Safari may never fire when it isn't allowed to preload — so the poster
  * just sat there. Now `play()` is called directly (it starts the load on its
  * own), and if it rejects, the hero falls back to the previous WebP frame
- * sequence (public/video/frames-v10: every frame of hero.mp4 — 270 frames,
- * 1024px/q55, 9.4MB — stepped at 60fps by a rAF loop swapping an <img> over
- * the poster; it was frames-v8, 289 frames at 55fps, before the
- * crane-rotation speed-up below changed the timing). A JS-driven
+ * sequence (public/video/frames-v11: every frame of hero.mp4 — 196 frames,
+ * 1024px/q55, 7.4MB — stepped at 60fps by a rAF loop swapping an <img> over
+ * the poster; regenerated, under a new name, each time the speed changes
+ * below — it was frames-v8, then frames-v10). A JS-driven
  * image swap isn't subject to autoplay policy, so that path always moves.
  * The frames are only fetched on that fallback path — browsers that play the
  * video never download them. Both paths end in the same auto-scroll +
@@ -116,6 +119,15 @@
  * frames fallback from the new file (every frame, 1024px, WebP q55, under a
  * new frames-vN name so browsers can't serve stale cached frames).
  *
+ * CLIP 2 SPEED-UP, SLOW FINISH (2026-10-06, on request — "increase the speed
+ * on second clip make little slow on few end frame"): on top of the
+ * rotation speed-up above, clip 2 eases up to 2× over its first 20 frames
+ * (265–284), plays at 2× through 285–528, then eases DOWN over its last 48
+ * frames (529–576) from 2× to 0.6× — slower than the base speed — so the
+ * shot settles gently before the auto-scroll instead of cutting off at full
+ * speed. Measured the same way: clip 1 unchanged, clip 2 still starts at
+ * 1.67s, 2× until ~2.9s, then the slow finish; 3.27s total (was 4.50s).
+ *
  * AUTO-SCROLL ON COMPLETION, SKIPPING THE TRUE LAST FRAME (2026-10-01, on
  * request — "auto scroll up to nav bar visible. User no need to see last
  * frame of second clip"): the held TNT-logo card is cut out of hero.mp4 at
@@ -172,9 +184,9 @@ const VIDEO_SRC = "/video/hero.mp4";
 const POSTER_SRC = "/video/hero-poster.webp";
 
 /** Fallback frame sequence — see AUTOPLAY BLOCKED above. Every frame of
- *  hero.mp4 (60fps), so it has the same timing, rotation speed-up included. */
-const FRAME_DIR = "/video/frames-v10";
-const FRAME_COUNT = 270;
+ *  hero.mp4 (60fps), so it has the same timing, speed changes included. */
+const FRAME_DIR = "/video/frames-v11";
+const FRAME_COUNT = 196;
 const FRAME_FPS = 60;
 const FRAME_DURATION = 1000 / FRAME_FPS;
 const FRAMES_TOTAL_MS = FRAME_COUNT * FRAME_DURATION;
@@ -281,7 +293,7 @@ export default function Hero() {
     video.play().catch(() => {
       if (cancelled) return;
       // Stop the now-pointless video download (preload="auto" would keep
-      // pulling all 4.3MB) so the fallback frames get the full bandwidth —
+      // pulling all 3.7MB) so the fallback frames get the full bandwidth —
       // at 10Mbps that cut the fallback's start delay from ~9.5s to ~5.5s.
       // The <img> overlay covers the element from here on.
       video.removeAttribute("src");
