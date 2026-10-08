@@ -16,6 +16,12 @@
  * the wheel — and clicking a year (or arrow keys / Home / End on the tabs)
  * scrolls the page to that chapter's point, so the two never disagree.
  *
+ * DISSOLVE (2026-10-08, on request — "smooth dissolve on ... text
+ * changes"): the panel used to remount the chapter (old text gone at once,
+ * new text fading up). Now all chapters are stacked and crossfade on
+ * opacity (out 300ms; in 500ms after a 150ms beat — FADE_IN / FADE_OUT)
+ * — see the DISSOLVE note in the panel markup.
+ *
  * The pinned layout is pure CSS behind `motion-safe:lg:`, so there's no
  * hydration flash and reduced motion simply gets the un-pinned version: a
  * normal click-to-select tablist (the scroll range is then ~0 and the
@@ -49,6 +55,14 @@ import { CHROME_H } from "@/components/site/chrome";
 import { MILESTONES, type Milestone } from "./aboutData";
 
 const LAST = MILESTONES.length - 1;
+/** Staggered dissolve: the outgoing chapter fades out quickly, the incoming
+ *  one fades in a beat later and slower. Still reads as one smooth dissolve,
+ *  but the overlap is short — a jump that scrolls past chapters (1985 →
+ *  2014 passes 2012) no longer stacks three chapters' text at once. The
+ *  transition timing comes from the target state, so each direction gets
+ *  its own duration. */
+const FADE_IN = "opacity-100 motion-safe:duration-500 motion-safe:delay-150";
+const FADE_OUT = "opacity-0 motion-safe:duration-300 motion-safe:delay-0";
 /** The line spans the middle 80% of the row (stop 0 at 10%, last at 90%). */
 const LINE_SPAN = 80;
 
@@ -273,17 +287,42 @@ export default function Timeline() {
             tabIndex={0}
             className="mt-10 grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] items-end gap-12 border-t border-black/10 pt-10 focus-visible:ring-2 focus-visible:ring-tnt-amber focus-visible:outline-none"
           >
-            <p
-              key={m.id}
-              className="font-display text-[clamp(5rem,11vw,10rem)] leading-[0.85] text-black motion-safe:animate-[about-fade-up_250ms_cubic-bezier(0.22,1,0.36,1)]"
-            >
-              {m.year}
-            </p>
-            <div key={`${m.id}-body`} className="min-h-[13rem] motion-safe:animate-[about-fade-up_250ms_cubic-bezier(0.22,1,0.36,1)]">
-              <p className="font-body text-xs font-bold tracking-[0.18em] text-tnt-amber uppercase">{m.place}</p>
-              <h3 className="mt-3 font-display text-3xl tracking-wide text-black uppercase">{m.chapter}</h3>
-              <p className="mt-4 max-w-xl font-body text-lg leading-relaxed text-black/70">{m.body}</p>
-              <Logos m={m} className="mt-6" />
+            {/* DISSOLVE: every chapter is rendered, stacked in the same grid
+                cell, and only the active one is opaque, so a change is a true
+                crossfade (old out while new in) rather than a swap. Opacity
+                only, no movement; instant under reduced motion. Inactive
+                layers are aria-hidden + inert, so only the active chapter is
+                read or focusable. Stacking also fixes the panel's height to
+                the tallest chapter, so nothing below shifts as text changes. */}
+            <div className="grid items-end">
+              {MILESTONES.map((ms, i) => (
+                <p
+                  key={ms.id}
+                  aria-hidden={i !== active}
+                  className={`[grid-area:1/1] font-display text-[clamp(5rem,11vw,10rem)] leading-[0.85] text-black motion-safe:transition-opacity motion-safe:ease-in-out ${
+                    i === active ? FADE_IN : FADE_OUT
+                  }`}
+                >
+                  {ms.year}
+                </p>
+              ))}
+            </div>
+            <div className="grid items-start">
+              {MILESTONES.map((ms, i) => (
+                <div
+                  key={ms.id}
+                  aria-hidden={i !== active}
+                  inert={i !== active}
+                  className={`[grid-area:1/1] motion-safe:transition-opacity motion-safe:ease-in-out ${
+                    i === active ? FADE_IN : FADE_OUT
+                  }`}
+                >
+                  <p className="font-body text-xs font-bold tracking-[0.18em] text-tnt-amber uppercase">{ms.place}</p>
+                  <h3 className="mt-3 font-display text-3xl tracking-wide text-black uppercase">{ms.chapter}</h3>
+                  <p className="mt-4 max-w-xl font-body text-lg leading-relaxed text-black/70">{ms.body}</p>
+                  <Logos m={ms} className="mt-6" />
+                </div>
+              ))}
             </div>
           </div>
 
