@@ -250,9 +250,11 @@ export const NAV_GROUPS: NavGroup[] = [
   // section to the dedicated /contact page, on request — which also gives
   // it an active state there via activeGroup().
   { label: "Contact Us", href: "/contact", columns: [] },
-  // The two remaining inert items. Each was a real route until 2026-08-04
-  // and has no homepage section, so there is nothing honest to point at
-  // yet — see the `href` docs on NavGroup above.
+  // The inert items. Each was a real route until 2026-08-04 and has no
+  // page or homepage section, so there is nothing honest to point at yet —
+  // see the `href` docs on NavGroup above. Careers was removed for Contact
+  // Us and brought back beside it the same day (2026-10-08, on request).
+  { label: "Careers", href: null, columns: [] },
   { label: "News", href: null, columns: [] },
   { label: "For Sale", href: null, columns: [] },
   // "Contact us" removed as a top-level item 2026-09-11, on request. It
