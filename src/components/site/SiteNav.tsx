@@ -401,7 +401,10 @@ export default function SiteNav() {
             >
               1-800-799-2505
             </a>
-            <Button href="/#quote" variant="primary" onDark arrow={false}>
+            {/* whitespace-nowrap: "Contact Us" (which replaced the shorter
+                "Careers", 2026-10-08) narrowed this rail enough to wrap the
+                label onto two lines at 1440px. */}
+            <Button href="/#quote" variant="primary" onDark arrow={false} className="whitespace-nowrap">
               Get a Quote
             </Button>
           </div>

@@ -33,7 +33,7 @@ const REGIONAL = [
   { brand: "Southway Crane", region: "Southeast (GA · AL · SC · FL)", phone: "1-800-335-3148", href: "tel:+18003353148" },
   { brand: "RMS Cranes", region: "Rocky Mountain (CO · WY · NM)", phone: "1-800-588-7095", href: "tel:+18005887095" },
   { brand: "Eagle West Cranes", region: "British Columbia", phone: "1-800-667-2215", href: "tel:+18006672215" },
-  { brand: "JMS Crane", region: "Montana · Idaho", phone: "(406) 839-5035", href: "tel:+14068395035" },
+  { brand: "JMS Crane", region: "Montana · South Dakota", phone: "(406) 839-5035", href: "tel:+14068395035" },
 ];
 
 export default function ContactSection() {

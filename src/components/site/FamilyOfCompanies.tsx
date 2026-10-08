@@ -47,7 +47,7 @@ const COMPANIES = [
   {
     name: "JMS Crane & Rigging",
     logo: "/brand/jms.svg",
-    region: "Montana and Idaho",
+    region: "Montana and South Dakota",
     area: "Northern Rockies",
   },
 ];
@@ -60,7 +60,9 @@ const COMPANIES = [
 const STATS: { value: string; label: string }[] = [
   { value: "4", label: "Regional operating companies" },
   { value: "2", label: "Countries, US and Canada" },
-  // GA, AL, SC, FL, CO, WY, NM, MT, ID + British Columbia
+  // GA, AL, SC, FL, CO, WY, NM, MT, SD + British Columbia (JMS covers
+  // Montana and South Dakota per its own site — corrected from Idaho
+  // 2026-10-08; the count is unchanged)
   { value: "10", label: "States and provinces covered" },
   { value: "1", label: "Shared fleet and iCARE safety program" },
 ];

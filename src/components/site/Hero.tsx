@@ -81,6 +81,16 @@
  * (shifting the start time forward) rather than skipping ahead, so a slow
  * connection briefly pauses instead of jumping.
  *
+ * HASH ARRIVAL (2026-10-08, approved — links such as /about's "Request a
+ * Quote" → /#quote): opening the homepage with a #section used to play the
+ * video off-screen and then auto-scroll the visitor back up to #family,
+ * never reaching the section (SmoothScroll.tsx also resets every load to
+ * the top, discarding the browser's own hash jump). Now, when the URL has a
+ * hash other than #top that matches an element, the hero skips playback
+ * entirely, collapses at once, and scrolls to that element
+ * (scrollToElement.ts) — then once more after load if the visitor hasn't
+ * started scrolling. A plain visit, or /#top, plays exactly as before.
+ *
  * REDUCED MOTION: under `prefers-reduced-motion` neither path runs — the
  * hero rests on its first frame and nothing auto-scrolls. Because the video
  * carries `autoPlay` (see the video-path effect), it may have begun before
@@ -179,6 +189,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { getLenis } from "@/components/SmoothScroll";
 import { CHROME_H } from "@/components/site/chrome";
+import { hashTarget, scrollToElement } from "@/components/site/scrollToElement";
 
 const VIDEO_SRC = "/video/hero.mp4";
 const POSTER_SRC = "/video/hero-poster.webp";
@@ -250,6 +261,9 @@ export default function Hero() {
   const [collapsed, setCollapsed] = useState(false);
   const removedRef = useRef(0);
   const finishedRef = useRef(false);
+  // HASH ARRIVAL — see that docblock note. True when the page was opened
+  // with a #section (other than #top): skip playback, collapse, jump there.
+  const hashJumpRef = useRef(false);
   const fallbackTimerRef = useRef<number | undefined>(undefined);
 
   // Shared ending for both paths: auto-scroll to #family, then collapse
@@ -280,6 +294,15 @@ export default function Hero() {
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    if (window.location.hash && window.location.hash !== "#top" && hashTarget()) {
+      video.pause();
+      finishedRef.current = true;
+      hashJumpRef.current = true;
+      // Deferred a frame: a same-tick setState in an effect is flagged by
+      // react-hooks/set-state-in-effect, and one frame is invisible here.
+      const id = requestAnimationFrame(() => setCollapsed(true));
+      return () => cancelAnimationFrame(id);
+    }
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       video.pause();
       video.currentTime = 0;
@@ -396,6 +419,32 @@ export default function Hero() {
   // to 0, which is the landing view anyway.
   useLayoutEffect(() => {
     if (!collapsed) return;
+    if (hashJumpRef.current) {
+      // HASH ARRIVAL: go to the requested section now, and again once the
+      // page has loaded in case images above it shifted the layout — unless
+      // the visitor has started scrolling by then.
+      let userMoved = false;
+      const stop = () => {
+        userMoved = true;
+      };
+      const go = () => {
+        const el = hashTarget();
+        if (!el || userMoved) return;
+        getLenis()?.resize();
+        scrollToElement(el);
+      };
+      go();
+      window.addEventListener("wheel", stop, { passive: true, once: true });
+      window.addEventListener("touchstart", stop, { passive: true, once: true });
+      window.addEventListener("keydown", stop, { once: true });
+      if (document.readyState !== "complete") window.addEventListener("load", go, { once: true });
+      return () => {
+        window.removeEventListener("wheel", stop);
+        window.removeEventListener("touchstart", stop);
+        window.removeEventListener("keydown", stop);
+        window.removeEventListener("load", go);
+      };
+    }
     const top = Math.max(0, window.scrollY - removedRef.current);
     const lenis = getLenis();
     if (lenis) {
