@@ -42,7 +42,10 @@ const SERVICES = [
 
 // The six classes in the nav's Load Chart menu, so the form and the fleet
 // speak the same taxonomy. "Not sure" is a real answer — a rep will recommend.
-const CRANE_TYPES = [
+// Exported (with `field`, `label`, `Req`, `Opt` below) for /contact's
+// ContactForm, so both forms share one field style and one crane taxonomy
+// (2026-10-08). Export keywords only — nothing here renders differently.
+export const CRANE_TYPES = [
   "All-Terrain Crane",
   "Crawler Crane",
   "Hydraulic Truck Crane",
@@ -56,14 +59,14 @@ const CRANE_TYPES = [
 // Canada and Eagle West quote Canadian jobsites.
 const POSTAL_PATTERN = "\\d{5}(-\\d{4})?|[A-Za-z]\\d[A-Za-z] ?\\d[A-Za-z]\\d";
 
-const field =
+export const field =
   "w-full rounded-md border border-black/15 bg-white px-4 py-3 font-body text-sm text-black placeholder:text-tnt-meta focus:border-tnt-amber focus:ring-1 focus:ring-tnt-amber focus:outline-none";
-const label =
+export const label =
   "block font-body text-[11px] font-semibold tracking-[0.16em] text-tnt-meta uppercase";
 
 /** Visual required marker. aria-hidden: the input's own `required` is what
  *  assistive tech announces, so the star would only be read as "star". */
-function Req() {
+export function Req() {
   return (
     <span aria-hidden="true" className="ml-1 text-tnt-maroon">
       *
@@ -72,7 +75,7 @@ function Req() {
 }
 
 /** Quiet "optional" tag for the fields a visitor may reasonably not know. */
-function Opt() {
+export function Opt() {
   return (
     <span className="ml-1 font-normal tracking-normal normal-case">(optional)</span>
   );

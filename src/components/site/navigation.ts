@@ -97,7 +97,7 @@ export const NAV_GROUPS: NavGroup[] = [
   { label: "Home", href: "/#top", columns: [] },
   {
     label: "About",
-    href: "/#statement",
+    href: "/about",
     columns: [
       {
         no: "01",
@@ -112,15 +112,17 @@ export const NAV_GROUPS: NavGroup[] = [
           // An /our-story route briefly lived here on 2026-08-06 and was
           // deleted the same day. This points back at the homepage's Statement
           // section, which is where "who we are" lives on a single-page site.
-          { label: "Who We Are", href: "/#statement", icon: "commercial" },
+          // Who We Are + Family of Companies point at the /about page
+          // (2026-10-08, approved); the rest stay homepage sections.
+          { label: "Who We Are", href: "/about", icon: "commercial" },
           { label: "Coverage Map", href: "/#coverage", icon: "pin" },
-          { label: "Family of Companies", href: "/#family", icon: "commercial" },
+          { label: "Family of Companies", href: "/about#family-of-companies", icon: "commercial" },
           { label: "Safety & Record", href: "/#safety", icon: "engineering" },
           // "Case Studies" (/#projects) removed 2026-09-18, on request —
           // it was a dead link: CaseStudies.tsx is unrendered on the
           // homepage (see page.tsx), so #projects doesn't exist. See
           // page.tsx's own note — the footer still links there too.
-          { label: "Contact Us", href: "/#contact", icon: "mail" },
+          { label: "Contact Us", href: "/contact", icon: "mail" },
         ],
       },
       // Dropped with their routes on 2026-08-04, none having a homepage
@@ -243,10 +245,14 @@ export const NAV_GROUPS: NavGroup[] = [
   // Record" item and feature card already use — one real section, now
   // reachable two ways rather than a second copy of it.
   { label: "Safety Needs", href: "/#safety", columns: [] },
-  // The three inert items. Each was a real route until 2026-08-04 and has no
-  // homepage section, so there is nothing honest to point at yet — see the
-  // `href` docs on NavGroup above.
-  { label: "Careers", href: null, columns: [] },
+  // Contact Us replaced the inert "Careers" item in this slot (2026-10-08,
+  // on request). Repointed the same day from the homepage's /#contact
+  // section to the dedicated /contact page, on request — which also gives
+  // it an active state there via activeGroup().
+  { label: "Contact Us", href: "/contact", columns: [] },
+  // The two remaining inert items. Each was a real route until 2026-08-04
+  // and has no homepage section, so there is nothing honest to point at
+  // yet — see the `href` docs on NavGroup above.
   { label: "News", href: null, columns: [] },
   { label: "For Sale", href: null, columns: [] },
   // "Contact us" removed as a top-level item 2026-09-11, on request. It
@@ -364,7 +370,9 @@ const MARKETS: {
     region: "northern-rockies",
     brand: "JMS Crane & Rigging",
     logo: "/brand/jms.svg",
-    cities: ["Billings, MT", "Bozeman, MT", "Soda Springs, ID"],
+    // JMS's own site lists Billings and Sioux Falls (2026-10-08 audit);
+    // "Soda Springs, ID" corrected. Bozeman isn't on its site — unverified.
+    cities: ["Billings, MT", "Bozeman, MT", "Sioux Falls, SD"],
   },
   {
     region: "western-canada",
@@ -711,7 +719,7 @@ const LOCATION_CONTENT: Record<RegionId, LocationContent> = {
       eyebrow: "Northern Rockies",
       title: "Remote-site mobilization",
       blurb:
-        "JMS reaches sites the highway doesn't — Montana and Idaho wind, mining, and utility work with self-contained crews.",
+        "JMS reaches sites the highway doesn't — Montana and South Dakota wind, mining, and utility work with self-contained crews.",
       href: "/#quote",
       cta: "Talk to JMS",
     },
