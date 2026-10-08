@@ -121,9 +121,8 @@ function mapPadding(): number | { top: number; bottom: number; left: number; rig
     ? { top: 48, bottom: 48, left: 380, right: 400 }
     : 48;
 }
-type Padding = ReturnType<typeof mapPadding>;
-function fitOptions(padding: Padding = mapPadding()) {
-  return { padding, duration: 0 } as const;
+function fitOptions() {
+  return { padding: mapPadding(), duration: 0 } as const;
 }
 
 export interface BranchMapProps {
@@ -134,11 +133,6 @@ export interface BranchMapProps {
   onSelect: (id: string) => void;
   onHover: (id: string | null) => void;
   className?: string;
-  /** Camera padding for fits and fly-tos. Omit to keep the homepage
-   *  locator's behaviour (mapPadding(): clears its floating cards at xl).
-   *  /contact passes a plain number — its panel sits beside the map, not
-   *  over it, so there is nothing to clear. */
-  padding?: number;
 }
 
 /**
@@ -194,7 +188,6 @@ export function BranchMap({
   onSelect,
   onHover,
   className = "",
-  padding,
 }: BranchMapProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MlMap | null>(null);
@@ -219,15 +212,6 @@ export function BranchMap({
     selectedIdRef.current = selectedId;
   }, [selectedId]);
 
-  // Read at call time (fits happen in effects and the ResizeObserver), so the
-  // homepage — which passes nothing — still gets mapPadding()'s live
-  // breakpoint check on every fit.
-  const paddingRef = useRef(padding);
-  useEffect(() => {
-    paddingRef.current = padding;
-  }, [padding]);
-  const pad = useCallback(() => paddingRef.current ?? mapPadding(), []);
-
   const reduced =
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -245,7 +229,7 @@ export function BranchMap({
       container: host,
       style: STYLE_URL,
       bounds: BOUNDS,
-      fitBoundsOptions: fitOptions(pad()),
+      fitBoundsOptions: fitOptions(),
       // North America only — no world-spanning pan, no zooming out past the
       // continent, which is what "do not display the entire world" means in
       // interaction terms as well as on first paint.
@@ -321,7 +305,7 @@ export function BranchMap({
       const m = mapRef.current;
       if (!m) return;
       m.resize();
-      if (!selectedIdRef.current) m.fitBounds(BOUNDS, fitOptions(pad()));
+      if (!selectedIdRef.current) m.fitBounds(BOUNDS, fitOptions());
     });
     ro.observe(host);
 
@@ -333,7 +317,7 @@ export function BranchMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [branchList, pad]);
+  }, [branchList]);
 
   // ---- Marker state: cheap class toggles, no re-creation ------------------
   useEffect(() => {
@@ -371,10 +355,10 @@ export function BranchMap({
         // Keeps the selected branch centered in the space BETWEEN the two
         // floating cards rather than the raw container center — see the
         // "MARKERS HIDDEN BEHIND THE FLOATING CARDS" note above fitOptions().
-        padding: pad(),
+        padding: mapPadding(),
       });
     },
-    [reduced, pad],
+    [reduced],
   );
 
   useEffect(() => {
@@ -392,8 +376,8 @@ export function BranchMap({
     if (pts.length < 2) return;
     const bounds = new LngLatBounds();
     for (const b of pts) bounds.extend([b.lng, b.lat]);
-    map.fitBounds(bounds, { padding: pad(), duration: reduced ? 0 : 900, maxZoom: 6 });
-  }, [visibleIds, branchList, reduced, pad]);
+    map.fitBounds(bounds, { padding: mapPadding(), duration: reduced ? 0 : 900, maxZoom: 6 });
+  }, [visibleIds, branchList, reduced]);
 
   return (
     <div
