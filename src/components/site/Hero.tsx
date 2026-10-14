@@ -89,7 +89,11 @@
  * hash other than #top that matches an element, the hero skips playback
  * entirely, collapses at once, and scrolls to that element
  * (scrollToElement.ts) — then once more after load if the visitor hasn't
- * started scrolling. A plain visit, or /#top, plays exactly as before.
+ * started scrolling. /#top — the nav's Home link — is included
+ * (2026-10-14, on request: "we no need to show the hero" when coming back
+ * from another page): it skips playback and lands on the usual post-hero
+ * view, #family under the bar. Only a plain visit (no hash) plays the
+ * video.
  *
  * REDUCED MOTION: under `prefers-reduced-motion` neither path runs — the
  * hero rests on its first frame and nothing auto-scrolls. Because the video
@@ -294,7 +298,7 @@ export default function Hero() {
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    if (window.location.hash && window.location.hash !== "#top" && hashTarget()) {
+    if (window.location.hash && hashTarget()) {
       video.pause();
       finishedRef.current = true;
       hashJumpRef.current = true;
@@ -413,6 +417,28 @@ export default function Hero() {
     return () => cancelAnimationFrame(rafId);
   }, [framesReady, finish]);
 
+  // Home (/#top) clicked while already on the homepage: the URL usually
+  // already ends in #top, so the browser sees no change and doesn't scroll.
+  // Catch any /#top link (desktop nav, mobile menu, footer) and scroll to
+  // the top ourselves — which, once the hero has collapsed, is the usual
+  // post-hero view with #family under the bar.
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = (e.target as Element | null)?.closest?.("a");
+      if (!a) return;
+      const url = new URL(a.href, window.location.href);
+      if (url.origin !== window.location.origin || url.pathname !== "/" || url.hash !== "#top") return;
+      e.preventDefault();
+      history.replaceState(null, "", "/#top");
+      const lenis = getLenis();
+      if (lenis) lenis.scrollTo(0, { duration: 1 });
+      else window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, []);
+
   // The collapse's scroll compensation. Runs before paint, so the shorter
   // section and the shifted scrollY land in the same frame — no visible jump.
   // If the visitor had scrolled back up into the hero mid-flight, this clamps
@@ -428,10 +454,19 @@ export default function Hero() {
         userMoved = true;
       };
       const go = () => {
-        const el = hashTarget();
-        if (!el || userMoved) return;
+        if (userMoved) return;
         getLenis()?.resize();
-        scrollToElement(el);
+        // /#top (the nav's Home link) lands on the normal post-hero view:
+        // with the hero collapsed, scrollY 0 IS the auto-scroll's landing
+        // spot (#family at LANDING_OFFSET under the bar).
+        if (window.location.hash === "#top") {
+          const lenis = getLenis();
+          if (lenis) lenis.scrollTo(0, { immediate: true, force: true });
+          else window.scrollTo({ top: 0 });
+          return;
+        }
+        const el = hashTarget();
+        if (el) scrollToElement(el);
       };
       go();
       window.addEventListener("wheel", stop, { passive: true, once: true });
