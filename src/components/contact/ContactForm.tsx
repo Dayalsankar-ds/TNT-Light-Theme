@@ -1,15 +1,14 @@
 "use client";
 
 /**
- * CONTACT FORM — /contact's one form container, two tabs: Request a Quote
- * and General Enquiry. Only the active tab is shown; both stay mounted (the
- * inactive one `hidden`) so switching tabs never throws away what a visitor
- * has typed.
+ * CONTACT FORM — /contact's quote form (also embedded on
+ * /services/crane-rental). One form, no tabs: the Request a Quote / General
+ * Enquiry switch and the enquiry form were removed 2026-10-13, on request —
+ * the homepage form has no such options, and this one mirrors it.
  *
  * Reuses the homepage RequestQuote form's field style, required/optional
  * markers and crane taxonomy (exported from RequestQuote.tsx), so the two
- * forms read as one system. Both tabs submit through the single
- * submitContact() seam — one submission path, not two.
+ * forms read as one system. Submits through the single submitContact() seam.
  *
  * ⚠ PENDING INTEGRATION: submitContact() has no destination yet and returns
  * "not-configured". The form says so up front, and after submit it states
@@ -27,52 +26,25 @@ import {
   useState,
   type FocusEvent,
   type FormEvent,
-  type KeyboardEvent,
   type ReactNode,
 } from "react";
 import { AlertCircle, Info } from "lucide-react";
 import Button from "@/components/site/Button";
-import { CRANE_TYPES, field, label, Opt, Req } from "@/components/site/RequestQuote";
+import { CRANE_TYPES, field, label, Opt, POSTAL_PATTERN, Req } from "@/components/site/RequestQuote";
+import { SERVICES as CATALOG } from "@/components/site/services";
 import { submitContact, type ContactKind, type SubmitResult } from "./submitContact";
-import { TAB_ID, useContactTabs, type ContactTab } from "./ContactTabs";
 
 /* ── Options ──────────────────────────────────────────────────────────── */
 
-// The site's approved service terms — the nav's Services column and
-// CoreServices.tsx, in the same journey order (approved 2026-10-08).
-const SERVICES = [
-  "Crane Rental",
-  "Lift Planning & Engineering",
-  "Specialized Rigging",
-  "Machinery Moving",
-  "Industrial Storage",
-  "Wind Energy",
-  "Other / Not Sure",
-];
+// QUOTE TAB = THE HOMEPAGE FORM (2026-10-13, on request — "follow the same
+// from main screen form"). Same fields, order, labels, required/optional
+// split, service list and field `name`s as RequestQuote.tsx, so both forms
+// produce one lead shape when submissions are connected. Only the submit
+// outcome differs on purpose: this form never shows a success it can't back.
+const SERVICES = CATALOG.map((s) => s.label);
 
-// Services where crane specifics are worth asking for. Everything else
-// skips the lifting fieldset entirely (progressive disclosure).
-const LIFT_SERVICES = new Set([
-  "Crane Rental",
-  "Lift Planning & Engineering",
-  "Wind Energy",
-  "Other / Not Sure",
-]);
-
-const QUOTE_CRANE_TYPES = [
-  ...CRANE_TYPES.filter((t) => !t.startsWith("Not sure")),
-  "Not sure — need assistance",
-];
-
-// Kept neutral: nothing here claims billing or sales enquiries reach a
-// dedicated department — that routing hasn't been confirmed.
-const ENQUIRY_TYPES = [
-  "General Information",
-  "Existing Project",
-  "Equipment Sales",
-  "Billing / Accounts",
-  "Other",
-];
+// Whole-string match of the homepage's own ZIP / postal pattern.
+const POSTAL_RE = new RegExp(`^(?:${POSTAL_PATTERN})$`);
 
 const FILE_EXTENSIONS = [".pdf", ".dwg", ".dxf", ".jpg", ".jpeg", ".png"];
 const MAX_FILE_MB = 10;
@@ -86,34 +58,29 @@ type Rule = {
   name: string;
   label: string;
   required?: string;
-  kind?: "email" | "phone";
+  kind?: "email" | "phone" | "postal";
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 const QUOTE_RULES: Rule[] = [
-  { name: "fullName", label: "Full name", required: "Enter your full name." },
-  { name: "company", label: "Company name", required: "Enter your company name." },
-  { name: "email", label: "Email address", required: "Enter your email address.", kind: "email" },
-  { name: "phone", label: "Phone number", required: "Enter your phone number.", kind: "phone" },
-  { name: "projectName", label: "Project name" },
-  { name: "projectLocation", label: "Project location", required: "Tell us where the project is." },
-  { name: "service", label: "Service required", required: "Select the service you need." },
-  { name: "startDate", label: "Project start date" },
+  { name: "name", label: "Full name", required: "Enter your full name." },
+  { name: "company", label: "Company" },
+  { name: "email", label: "Email", required: "Enter your email address.", kind: "email" },
+  { name: "phone", label: "Phone", required: "Enter your phone number.", kind: "phone" },
+  {
+    name: "jobsiteZip",
+    label: "Jobsite ZIP / postal code",
+    required: "Enter the jobsite ZIP or postal code.",
+    kind: "postal",
+  },
+  { name: "craneType", label: "Crane type", required: "Select a crane type." },
+  { name: "loadTons", label: "Load weight (tons)" },
+  { name: "radiusFt", label: "Lift radius (ft)" },
+  { name: "services", label: "Services required" },
+  { name: "start", label: "Start date" },
   { name: "duration", label: "Estimated duration" },
-  { name: "craneType", label: "Crane type" },
-  { name: "loadWeight", label: "Load weight (tons)" },
-  { name: "liftRadius", label: "Lift radius (ft)" },
-  { name: "description", label: "Project description", required: "Describe the project." },
-];
-
-const ENQUIRY_RULES: Rule[] = [
-  { name: "fullName", label: "Full name", required: "Enter your full name." },
-  { name: "email", label: "Email address", required: "Enter your email address.", kind: "email" },
-  { name: "phone", label: "Phone number", kind: "phone" },
-  { name: "company", label: "Company name" },
-  { name: "enquiryType", label: "Enquiry type", required: "Choose an enquiry type." },
-  { name: "message", label: "Message", required: "Enter your message." },
+  { name: "description", label: "Project description" },
 ];
 
 function checkValue(rule: Rule, raw: string): string | null {
@@ -121,6 +88,9 @@ function checkValue(rule: Rule, raw: string): string | null {
   if (!v) return rule.required ?? null;
   if (rule.kind === "email" && !EMAIL_RE.test(v)) {
     return "Enter a valid email address, like name@company.com.";
+  }
+  if (rule.kind === "postal" && !POSTAL_RE.test(v)) {
+    return "Enter a 5-digit ZIP (e.g. 77001) or Canadian postal code (e.g. T2P 1J9).";
   }
   if (rule.kind === "phone") {
     const digits = v.replace(/\D/g, "").length;
@@ -149,13 +119,13 @@ function validateForm(form: HTMLFormElement, rules: Rule[]): Errors {
     const msg = checkValue(rule, String(data.get(rule.name) ?? ""));
     if (msg) errors[rule.name] = msg;
   }
-  const file = data.get("attachment");
+  const file = data.get("file");
   const fileMsg = checkFile(file instanceof File ? file : null);
-  if (fileMsg) errors.attachment = fileMsg;
+  if (fileMsg) errors.file = fileMsg;
   return errors;
 }
 
-/* ── Shared hook: one submit path for both tabs ───────────────────────── */
+/* ── Form state + submit ──────────────────────────────────────────────── */
 
 type Status = { state: "idle" } | { state: "submitting" } | SubmitResult;
 
@@ -188,7 +158,8 @@ function useContactForm(kind: ContactKind, rules: Rule[], idPrefix: string) {
       if (v instanceof File) {
         if (v.size > 0) data[k] = v.name; // name only — no file is transmitted
       } else if (v.trim()) {
-        data[k] = v.trim();
+        // Chip groups post one entry per checked chip — join them.
+        data[k] = data[k] ? `${data[k]}, ${v.trim()}` : v.trim();
       }
     }
     const result = await submitContact(kind, data);
@@ -202,10 +173,16 @@ function useContactForm(kind: ContactKind, rules: Rule[], idPrefix: string) {
   const recheck = (e: FocusEvent<HTMLFormElement> | FormEvent<HTMLFormElement>) => {
     const el = e.target as HTMLInputElement;
     if (!el.name || !(el.name in errors)) return;
+    // Read from the form, not the element: a chip group's value is every
+    // checked chip, not the one just clicked.
+    const value = new FormData(e.currentTarget)
+      .getAll(el.name)
+      .filter((v): v is string => typeof v === "string")
+      .join(", ");
     const msg =
-      el.name === "attachment"
+      el.name === "file"
         ? checkFile(el.files?.[0] ?? null)
-        : checkValue(rules.find((r) => r.name === el.name) ?? { name: el.name, label: "" }, el.value);
+        : checkValue(rules.find((r) => r.name === el.name) ?? { name: el.name, label: "" }, value);
     setErrors((prev) => {
       const next = { ...prev };
       if (msg) next[el.name] = msg;
@@ -235,10 +212,10 @@ function buildMailto(kind: ContactKind, rules: Rule[], data: Record<string, stri
   const lines = rules
     .filter((r) => data[r.name])
     .map((r) => `${r.label}: ${data[r.name]}`);
-  if (data.attachment) lines.push(`Attachment (please attach to this email): ${data.attachment}`);
+  if (data.file) lines.push(`Attachment (please attach to this email): ${data.file}`);
   const subject =
     kind === "quote"
-      ? `Quote request: ${data.service ?? ""}${data.projectLocation ? `, ${data.projectLocation}` : ""}`
+      ? `Quote request${data.services ? `: ${data.services}` : ""}${data.jobsiteZip ? `, ${data.jobsiteZip}` : ""}`
       : `Enquiry: ${data.enquiryType ?? ""}`;
   // Mail clients truncate very long mailto: URLs; keep the body comfortably short.
   const body = lines.join("\n").slice(0, 1800);
@@ -278,16 +255,88 @@ function Field({
           {hint}
         </p>
       )}
-      {error && (
-        <p
-          id={`${id}-error`}
-          className="mt-1.5 flex items-start gap-1.5 font-body text-[13px] font-semibold text-tnt-maroon"
-        >
-          <AlertCircle aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          {error}
-        </p>
-      )}
+      {error && <ErrorText id={id} error={error} />}
     </div>
+  );
+}
+
+function ErrorText({ id, error }: { id: string; error: string }) {
+  return (
+    <p
+      id={`${id}-error`}
+      className="mt-1.5 flex items-start gap-1.5 font-body text-[13px] font-semibold text-tnt-maroon"
+    >
+      <AlertCircle aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+      {error}
+    </p>
+  );
+}
+
+// The homepage RequestQuote form's service chips, exactly: amber fill when
+// on, hairline outline when off. Real checkbox/radio inputs underneath
+// (visually hidden), so they post with the form, take keyboard focus, and
+// announce as a group.
+const pillOff = "border-black/15 text-tnt-body hover:border-black/40 hover:text-black";
+const pillBase = "rounded-full border px-4 py-2 font-body text-sm font-semibold transition-colors";
+
+function ChipGroup({
+  id,
+  legend,
+  name,
+  type,
+  options,
+  required,
+  error,
+  checked,
+  onToggle,
+}: {
+  id: string;
+  legend: string;
+  name: string;
+  type: "checkbox" | "radio";
+  options: string[];
+  required?: boolean;
+  error?: string;
+  /** Controlled selection (checkbox groups that drive other UI). */
+  checked?: string[];
+  onToggle?: (value: string) => void;
+}) {
+  return (
+    <fieldset aria-describedby={error ? `${id}-error` : undefined}>
+      <legend className={label}>
+        {legend}
+        {required && (
+          <>
+            <Req />
+            <span className="sr-only"> (required)</span>
+          </>
+        )}
+      </legend>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {options.map((o, i) => (
+          <label key={o} className="cursor-pointer">
+            <input
+              type={type}
+              name={name}
+              value={o}
+              // First chip carries the group's id, so the error summary
+              // and focus-on-error land on the group.
+              id={i === 0 ? id : undefined}
+              checked={checked ? checked.includes(o) : undefined}
+              onChange={onToggle ? () => onToggle(o) : undefined}
+              aria-invalid={error ? true : undefined}
+              className="peer sr-only"
+            />
+            <span
+              className={`inline-block ${pillBase} ${pillOff} peer-checked:border-tnt-amber peer-checked:bg-tnt-amber peer-checked:text-black peer-focus-visible:ring-2 peer-focus-visible:ring-tnt-amber peer-focus-visible:ring-offset-2`}
+            >
+              {o}
+            </span>
+          </label>
+        ))}
+      </div>
+      {error && <ErrorText id={id} error={error} />}
+    </fieldset>
   );
 }
 
@@ -295,13 +344,11 @@ function Field({
 // lose a specificity fight with `field`'s own border-black/15.
 const control = `${field} aria-[invalid=true]:border-tnt-maroon`;
 
-const legendCls = "font-display text-xl tracking-wide text-black uppercase";
-
 function ErrorSummary({ errors, rules, idPrefix }: { errors: Errors; rules: Rule[]; idPrefix: string }) {
   const keys = Object.keys(errors);
   if (keys.length === 0) return null;
   const labelFor = (k: string) =>
-    k === "attachment" ? "File attachment" : (rules.find((r) => r.name === k)?.label ?? k);
+    k === "file" ? "Drawing or spec" : (rules.find((r) => r.name === k)?.label ?? k);
   return (
     <div role="alert" className="mb-6 rounded-lg border border-tnt-maroon/40 bg-tnt-maroon/[0.04] p-4">
       <p className="flex items-center gap-2 font-body text-sm font-bold text-tnt-maroon">
@@ -414,154 +461,125 @@ function SubmitRow({ status, children }: { status: Status; children: string }) {
   );
 }
 
-/* ── Tab 01 — Request a Quote ─────────────────────────────────────────── */
+/* ── The form ─────────────────────────────────────────────────────────── */
 
-function QuoteForm() {
+function QuoteForm({ initialService }: { initialService: string }) {
   const p = "cq";
   const { errors, status, mailto, onSubmit, recheck, a11y } = useContactForm("quote", QUOTE_RULES, p);
-  const [service, setService] = useState("");
-  const showLift = LIFT_SERVICES.has(service);
+  const [services, setServices] = useState<string[]>(initialService ? [initialService] : []);
+  const toggleService = (s: string) =>
+    setServices((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
   const submitting = "state" in status && status.state === "submitting";
 
   return (
     <form noValidate onSubmit={onSubmit} onBlur={recheck} onChange={recheck} aria-busy={submitting}>
       <ErrorSummary errors={errors} rules={QUOTE_RULES} idPrefix={p} />
-      <p className="mb-6 font-body text-[13px] text-tnt-body">
+      <p className="mb-5 font-body text-[13px] text-tnt-body">
         <span aria-hidden="true" className="text-tnt-maroon">*</span> Required field
       </p>
 
-      <fieldset>
-        <legend className={legendCls}>Your details</legend>
-        <div className="mt-4 grid gap-5 sm:grid-cols-2">
-          <Field id={`${p}-fullName`} text="Full name" required error={errors.fullName}>
-            <input {...a11y("fullName")} required autoComplete="name" className={control} />
-          </Field>
-          <Field id={`${p}-company`} text="Company name" required error={errors.company}>
-            <input {...a11y("company")} required autoComplete="organization" className={control} />
-          </Field>
-          <Field id={`${p}-email`} text="Email address" required error={errors.email}>
-            <input {...a11y("email")} type="email" required autoComplete="email" className={control} />
-          </Field>
-          <Field id={`${p}-phone`} text="Phone number" required error={errors.phone}>
-            <input {...a11y("phone")} type="tel" required autoComplete="tel" className={control} />
-          </Field>
-        </div>
-      </fieldset>
+      {/* Field-for-field the homepage RequestQuote form: contact, then job
+          details, then services, dates, description, drawing. */}
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field id={`${p}-name`} text="Full name" required error={errors.name}>
+          <input {...a11y("name")} required autoComplete="name" className={control} />
+        </Field>
+        <Field id={`${p}-company`} text="Company">
+          <input {...a11y("company")} autoComplete="organization" className={control} />
+        </Field>
+        <Field id={`${p}-email`} text="Email" required error={errors.email}>
+          <input {...a11y("email")} type="email" required autoComplete="email" className={control} />
+        </Field>
+        <Field id={`${p}-phone`} text="Phone" required error={errors.phone}>
+          <input {...a11y("phone")} type="tel" required autoComplete="tel" className={control} />
+        </Field>
+      </div>
 
-      <fieldset className="mt-10">
-        <legend className={legendCls}>Your project</legend>
-        <div className="mt-4 grid gap-5 sm:grid-cols-2">
-          <Field id={`${p}-service`} text="Service required" required error={errors.service}>
-            <select
-              {...a11y("service")}
-              required
-              value={service}
-              onChange={(e) => setService(e.target.value)}
-              className={control}
-            >
-              <option value="" disabled>
-                Select a service
-              </option>
-              {SERVICES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field
-            id={`${p}-projectLocation`}
-            text="Project location"
+      {/* Job details — where, what, and (if known) how big */}
+      <div className="mt-6 grid gap-5 sm:grid-cols-2">
+        <Field id={`${p}-jobsiteZip`} text="Jobsite ZIP / postal code" required error={errors.jobsiteZip}>
+          <input
+            {...a11y("jobsiteZip")}
             required
-            error={errors.projectLocation}
-            hint="City and state/province, or ZIP/postal code"
-          >
-            <input
-              {...a11y("projectLocation", true)}
-              required
-              placeholder="e.g. Houston, TX"
-              className={control}
-            />
-          </Field>
-          <Field id={`${p}-projectName`} text="Project name" optional>
-            <input {...a11y("projectName")} className={control} />
-          </Field>
-          <Field id={`${p}-startDate`} text="Project start date" optional>
-            <input {...a11y("startDate")} type="date" className={control} />
-          </Field>
-          <Field id={`${p}-duration`} text="Estimated duration" optional>
-            <input {...a11y("duration")} placeholder="e.g. 3 days, 6 weeks" className={control} />
-          </Field>
-        </div>
-      </fieldset>
+            autoComplete="postal-code"
+            placeholder="e.g. 77001"
+            className={control}
+          />
+        </Field>
+        <Field id={`${p}-craneType`} text="Crane type" required error={errors.craneType}>
+          <select {...a11y("craneType")} required defaultValue="" className={control}>
+            <option value="" disabled>
+              Select a crane type
+            </option>
+            {CRANE_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field id={`${p}-loadTons`} text="Load weight (tons)" optional>
+          <input
+            {...a11y("loadTons")}
+            type="number"
+            inputMode="decimal"
+            min={0}
+            step="any"
+            placeholder="e.g. 40"
+            className={control}
+          />
+        </Field>
+        <Field id={`${p}-radiusFt`} text="Lift radius (ft)" optional>
+          <input
+            {...a11y("radiusFt")}
+            type="number"
+            inputMode="decimal"
+            min={0}
+            step="any"
+            placeholder="e.g. 80"
+            className={control}
+          />
+        </Field>
+      </div>
 
-      {/* Progressive disclosure: crane specifics only for lifting work, and
-          every one optional — a visitor who doesn't know them isn't blocked. */}
-      {showLift && (
-        <fieldset className="mt-10">
-          <legend className={legendCls}>
-            Lifting details <span className="font-body text-sm tracking-normal text-tnt-meta normal-case">(optional)</span>
-          </legend>
-          <p className="mt-2 font-body text-[13px] text-tnt-body">
-            If you know them, these help us match the right crane. If not, leave them blank and our
-            team will work it out with you.
-          </p>
-          <div className="mt-4 grid gap-5 sm:grid-cols-3">
-            <Field id={`${p}-craneType`} text="Crane type">
-              <select {...a11y("craneType")} defaultValue="" className={control}>
-                <option value="">Select a crane type</option>
-                {QUOTE_CRANE_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field id={`${p}-loadWeight`} text="Load weight (tons)">
-              <input
-                {...a11y("loadWeight")}
-                type="number"
-                inputMode="decimal"
-                min={0}
-                step="any"
-                placeholder="e.g. 40"
-                className={control}
-              />
-            </Field>
-            <Field id={`${p}-liftRadius`} text="Lift radius (ft)">
-              <input
-                {...a11y("liftRadius")}
-                type="number"
-                inputMode="decimal"
-                min={0}
-                step="any"
-                placeholder="e.g. 80"
-                className={control}
-              />
-            </Field>
-          </div>
-        </fieldset>
-      )}
+      <div className="mt-6">
+        <ChipGroup
+          id={`${p}-services`}
+          legend="Services required"
+          name="services"
+          type="checkbox"
+          options={SERVICES}
+          checked={services}
+          onToggle={toggleService}
+        />
+      </div>
 
-      <div className="mt-10 grid gap-5">
-        <Field id={`${p}-description`} text="Project description" required error={errors.description}>
+      <div className="mt-6 grid gap-5 sm:grid-cols-2">
+        <Field id={`${p}-start`} text="Start date">
+          <input {...a11y("start")} type="date" className={control} />
+        </Field>
+        <Field id={`${p}-duration`} text="Estimated duration">
+          <input {...a11y("duration")} placeholder="e.g. 3 days" className={control} />
+        </Field>
+      </div>
+
+      <div className="mt-6 grid gap-6">
+        <Field id={`${p}-description`} text="Project description">
           <textarea
             {...a11y("description")}
-            required
-            rows={5}
-            placeholder="Scope, site conditions, access, lift height, anything else we should know…"
+            rows={4}
+            placeholder="Site conditions, access, lift height, anything else…"
             className={`${control} resize-y`}
           />
         </Field>
         <Field
-          id={`${p}-attachment`}
-          text="File attachment"
-          optional
-          error={errors.attachment}
-          hint={`Drawings or specs: PDF, DWG, DXF, JPG or PNG, up to ${MAX_FILE_MB} MB.`}
+          id={`${p}-file`}
+          text="Attach a drawing or spec (optional)"
+          error={errors.file}
+          hint={`PDF, DWG, DXF, JPG or PNG, up to ${MAX_FILE_MB} MB.`}
         >
           <input
-            {...a11y("attachment", true)}
+            {...a11y("file", true)}
             type="file"
             accept={FILE_EXTENSIONS.join(",")}
             className="block w-full font-body text-sm text-tnt-body file:mr-4 file:rounded-md file:border-0 file:bg-black file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-tnt-navy focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tnt-amber"
@@ -573,7 +591,7 @@ function QuoteForm() {
           verbatim from the homepage RequestQuote form; ⚠ NOT YET APPROVED by
           TNT legal — confirm before launch (see the delivery report). */}
       <label className="mt-6 flex items-start gap-3 font-body text-[13px] leading-relaxed text-tnt-body">
-        <input type="checkbox" name="smsConsent" value="yes" className="mt-1 h-4 w-4 shrink-0 accent-tnt-amber" />
+        <input type="checkbox" name="consent" value="yes" className="mt-1 h-4 w-4 shrink-0 accent-tnt-amber" />
         <span>
           I agree to receive text messages from TNT Crane &amp; Rigging about my request. Reply STOP
           to opt out. Message &amp; data rates may apply.
@@ -583,129 +601,21 @@ function QuoteForm() {
       <div className="mt-8">
         <PendingNotice />
       </div>
-      <SubmitRow status={status}>Submit Project Request</SubmitRow>
+      <SubmitRow status={status}>Submit request</SubmitRow>
       <ResultPanel status={status} mailto={mailto} />
     </form>
   );
 }
 
-/* ── Tab 02 — General Enquiry ─────────────────────────────────────────── */
-
-function EnquiryForm() {
-  const p = "ce";
-  const { errors, status, mailto, onSubmit, recheck, a11y } = useContactForm("enquiry", ENQUIRY_RULES, p);
-  const submitting = "state" in status && status.state === "submitting";
-
+/** `service` is a services.ts id from the URL (/contact?service=crane-rental),
+ *  sent by service CTAs so a visitor doesn't pick it twice. Unknown ids are
+ *  ignored rather than guessed at. */
+export default function ContactForm({ service }: { service?: string }) {
+  const initialService = CATALOG.find((s) => s.id === service)?.label ?? "";
+  // The homepage form's card: rounded-2xl, hairline border, white on grey.
   return (
-    <form noValidate onSubmit={onSubmit} onBlur={recheck} onChange={recheck} aria-busy={submitting}>
-      <ErrorSummary errors={errors} rules={ENQUIRY_RULES} idPrefix={p} />
-      <p className="mb-6 font-body text-[13px] text-tnt-body">
-        <span aria-hidden="true" className="text-tnt-maroon">*</span> Required field
-      </p>
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Field id={`${p}-fullName`} text="Full name" required error={errors.fullName}>
-          <input {...a11y("fullName")} required autoComplete="name" className={control} />
-        </Field>
-        <Field id={`${p}-email`} text="Email address" required error={errors.email}>
-          <input {...a11y("email")} type="email" required autoComplete="email" className={control} />
-        </Field>
-        <Field id={`${p}-phone`} text="Phone number" optional error={errors.phone}>
-          <input {...a11y("phone")} type="tel" autoComplete="tel" className={control} />
-        </Field>
-        <Field id={`${p}-company`} text="Company name" optional>
-          <input {...a11y("company")} autoComplete="organization" className={control} />
-        </Field>
-        <Field id={`${p}-enquiryType`} text="Enquiry type" required error={errors.enquiryType} className="sm:col-span-2">
-          <select {...a11y("enquiryType")} required defaultValue="" className={control}>
-            <option value="" disabled>
-              Select an enquiry type
-            </option>
-            {ENQUIRY_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field id={`${p}-message`} text="Message" required error={errors.message} className="sm:col-span-2">
-          <textarea {...a11y("message")} required rows={6} className={`${control} resize-y`} />
-        </Field>
-      </div>
-
-      <div className="mt-8">
-        <PendingNotice />
-      </div>
-      <SubmitRow status={status}>Send Enquiry</SubmitRow>
-      <ResultPanel status={status} mailto={mailto} />
-    </form>
-  );
-}
-
-/* ── Container: tabs ──────────────────────────────────────────────────── */
-
-const TABS: { id: ContactTab; label: string }[] = [
-  { id: "quote", label: "Request a Quote" },
-  { id: "enquiry", label: "General Enquiry" },
-];
-
-export default function ContactForm() {
-  const { tab, setTab } = useContactTabs();
-
-  // WAI-ARIA tabs pattern: arrows/Home/End move between tabs and activate
-  // them (automatic activation — there are only two, both instant).
-  const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
-    const i = TABS.findIndex((t) => t.id === tab);
-    let next = i;
-    if (e.key === "ArrowRight") next = (i + 1) % TABS.length;
-    else if (e.key === "ArrowLeft") next = (i - 1 + TABS.length) % TABS.length;
-    else if (e.key === "Home") next = 0;
-    else if (e.key === "End") next = TABS.length - 1;
-    else return;
-    e.preventDefault();
-    setTab(TABS[next].id);
-    document.getElementById(TAB_ID[TABS[next].id])?.focus();
-  };
-
-  return (
-    <div className="overflow-hidden rounded-2xl border border-black/10 bg-white">
-      <div role="tablist" aria-label="Contact form type" className="grid grid-cols-2 border-b border-black/10">
-        {TABS.map((t) => {
-          const on = tab === t.id;
-          return (
-            <button
-              key={t.id}
-              id={TAB_ID[t.id]}
-              type="button"
-              role="tab"
-              aria-selected={on}
-              aria-controls={`${TAB_ID[t.id]}-panel`}
-              tabIndex={on ? 0 : -1}
-              onClick={() => setTab(t.id)}
-              onKeyDown={onKeyDown}
-              className={`px-3 py-4 font-display text-base tracking-wide uppercase transition-colors focus-visible:ring-2 focus-visible:ring-tnt-amber focus-visible:outline-none focus-visible:ring-inset sm:px-6 sm:py-5 sm:text-xl ${
-                on
-                  ? "bg-white text-black shadow-[inset_0_-3px_0_var(--color-tnt-amber)]"
-                  : "bg-black/[0.03] text-black/50 hover:text-black"
-              }`}
-            >
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {TABS.map((t) => (
-        <div
-          key={t.id}
-          id={`${TAB_ID[t.id]}-panel`}
-          role="tabpanel"
-          aria-labelledby={TAB_ID[t.id]}
-          hidden={tab !== t.id}
-          className="p-6 sm:p-8"
-        >
-          {t.id === "quote" ? <QuoteForm /> : <EnquiryForm />}
-        </div>
-      ))}
+    <div className="rounded-2xl border border-black/10 bg-white p-6 sm:p-8">
+      <QuoteForm initialService={initialService} />
     </div>
   );
 }

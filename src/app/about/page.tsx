@@ -260,7 +260,7 @@ export default function AboutPage() {
             <CapabilityExplorer />
           </div>
           <div className="mt-10">
-            <Button href="/#services" variant="primary">
+            <Button href="/services" variant="primary">
               Explore Our Services
             </Button>
           </div>

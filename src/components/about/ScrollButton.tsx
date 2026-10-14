@@ -19,7 +19,7 @@ export default function ScrollButton({
 }: {
   targetId: string;
   children: React.ReactNode;
-  variant?: "primary" | "secondary";
+  variant?: "primary" | "secondary" | "link";
   onDark?: boolean;
 }) {
   return (

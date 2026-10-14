@@ -6,12 +6,14 @@
  * into a dotted-map coordinate space, and swapping the backdrop for MapLibre
  * needed no change to the data at all.
  *
- * SERVICES come from navigation.ts via the operating brand, not a new table —
- * capability varies by operating company, and the mega panel already defines
- * it. One source, so the map and the nav can't disagree.
+ * SERVICES come from services.ts via the operating brand (2026-10-09) — the
+ * same audited table the nav panel and /services read, so the map and the
+ * nav can't disagree. An empty list means nothing is confirmed for that
+ * company yet; BranchLocator says so rather than showing a blank.
  */
 
-import { servicesForRegion, slugify, LOCATION_DETAILS, type RegionId } from "./navigation";
+import { slugify, LOCATION_DETAILS } from "./navigation";
+import { companyByName, confirmedServices } from "./services";
 import { contactFor, telHref, type ContactLine } from "./regionalContacts";
 
 export type Country = "US" | "CA";
@@ -42,20 +44,6 @@ export type Branch = Seed & {
    *  branch outside TNT Crane & Rigging) — omit the address in the UI
    *  rather than showing a fabricated one. */
   address?: { street: string; zip: string };
-};
-
-/**
- * Capability scope by operating company. TNT-operated branches carry the full
- * scope (null = unrestricted); the acquired brands inherit their region's set.
- */
-const BRAND_REGION: Record<string, RegionId | null> = {
-  "TNT Crane & Rigging": null,
-  "TNT Crane & Rigging Canada": "western-canada",
-  "RMS Cranes": "rocky-mountain",
-  "JMS Crane & Rigging": "northern-rockies",
-  "Southway Crane & Rigging": "southeast",
-  "Allison Crane & Rigging": "northeast-permian",
-  "Eagle West Crane & Rigging": "western-canada",
 };
 
 /**
@@ -175,7 +163,10 @@ export function buildBranchLocator(): BranchLocatorData {
       const details = LOCATION_DETAILS[slugify(b.city)];
       return {
         ...b,
-        services: servicesForRegion(BRAND_REGION[b.brand] ?? null),
+        services: (() => {
+          const c = companyByName(b.brand);
+          return c ? confirmedServices(c.id).map((x) => x.label) : [];
+        })(),
         phone: details
           ? { display: details.phone, href: telHref(details.phone), source: "branch" }
           : { ...regionalPhone(b), source: "regional" },

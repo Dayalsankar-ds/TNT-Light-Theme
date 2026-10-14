@@ -69,7 +69,7 @@ function Row({ c }: { c: RegionalContact }) {
 
 export default function RegionalDirectory() {
   return (
-    <section id="regional-contacts" aria-labelledby="regional-heading" className="scroll-mt-32 bg-tnt-gray">
+    <section id="regional-contacts" aria-labelledby="regional-heading" className="scroll-mt-32 bg-white">
       <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">

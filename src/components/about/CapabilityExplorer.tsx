@@ -18,15 +18,9 @@ import Image from "next/image";
 import { useRef, useState, type KeyboardEvent } from "react";
 import { Icon, type IconName } from "@/components/site/primitives";
 import { CAPABILITIES } from "./aboutData";
+import { SERVICES } from "@/components/site/services";
 
-const ICONS: Record<string, IconName> = {
-  "crane-rental": "rental",
-  "lift-planning-engineering": "engineering",
-  "specialized-rigging": "rigging",
-  "machinery-moving": "heavylift",
-  "industrial-storage": "storage",
-  "wind-energy": "wind",
-};
+const ICONS: Record<string, IconName> = Object.fromEntries(SERVICES.map((s) => [s.id, s.icon]));
 
 export default function CapabilityExplorer() {
   const [active, setActive] = useState(0);

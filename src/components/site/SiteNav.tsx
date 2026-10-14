@@ -100,7 +100,7 @@ export default function SiteNav() {
       : [...brands, brand];
     setBrands(next);
     const city = SERVICE_LOCATIONS.find((l) => l.id === location);
-    if (next.length && city?.region && !next.includes(city.brand)) {
+    if (next.length && city?.company && !next.includes(city.brand)) {
       setLocation("all");
     }
   };

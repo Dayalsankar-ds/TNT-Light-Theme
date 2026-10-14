@@ -19,6 +19,8 @@
  * in `story` below.
  */
 
+import { SERVICES, type ServiceId } from "@/components/site/services";
+
 export type Milestone = {
   id: string;
   /** Shown big; "Today" for the closing chapter. */
@@ -196,57 +198,36 @@ export type Capability = {
   photo: { src: string; alt: string } | null;
 };
 
-/** Copy mirrors CoreServices.tsx STAGES — the site's approved service terms. */
-export const CAPABILITIES: Capability[] = [
-  {
-    id: "crane-rental",
-    title: "Crane Rental",
-    body: "Operated or bare rental by the day, month, or project, from 8 to 1,300 tons. TNT's core service, and the fleet every other capability relies on.",
-    photo: {
-      src: "/photos/services/crane-rental-at-crane-cooler-lift.jpg",
-      alt: "TNT Crane & Rigging all-terrain crane mid-lift at a commercial site",
-    },
+/** The six services from services.ts (site-wide catalog since 2026-10-09 —
+ *  Heavy Haul & Transport replaced Wind Energy as a core service). Copy is
+ *  the catalog's own one-liner; only the photo is About-specific. */
+const CAPABILITY_PHOTOS: Record<ServiceId, Capability["photo"]> = {
+  "crane-rental": {
+    src: "/photos/services/crane-rental-at-crane-cooler-lift.jpg",
+    alt: "TNT Crane & Rigging all-terrain crane mid-lift at a commercial site",
   },
-  {
-    id: "lift-planning-engineering",
-    title: "Lift Planning & Engineering",
-    body: "Stamped lift plans, ground-bearing analysis, and crane selection, signed off by in-house engineers before a single machine mobilizes.",
-    photo: {
-      src: "/photos/cases/tnt-142-refinery-reactor-exchange.jpg",
-      alt: "Large crawler crane rigged for a heavy lift at a refinery",
-    },
+  "specialized-rigging": {
+    src: "/photos/rigging/cantilever-spreader-bar.jpg",
+    alt: "TNT cantilever spreader bar rigged below a crawler crane hook beside a high-rise",
   },
-  {
-    id: "specialized-rigging",
-    title: "Specialized Rigging",
-    body: "Hydraulic gantries, jack-and-slide, and precision skidding where a crane can't reach.",
-    photo: {
-      src: "/photos/rigging/cantilever-spreader-bar.jpg",
-      alt: "TNT cantilever spreader bar rigged below a crawler crane hook beside a high-rise",
-    },
+  "machinery-moving": {
+    src: "/photos/rigging/versa-lift-machinery-moving.jpg",
+    alt: "TNT Versa-Lift moving a large transformer",
   },
-  {
-    id: "machinery-moving",
-    title: "Machinery Moving",
-    body: "SPMTs and skates for turnkey plant relocation, with each piece set, aligned, and levelled in place.",
-    photo: {
-      src: "/photos/rigging/versa-lift-machinery-moving.jpg",
-      alt: "TNT Versa-Lift moving a large transformer",
-    },
+  "heavy-haul-transport": {
+    src: "/photos/rigging/spmt-modular-transport.jpg",
+    alt: "Self-propelled modular transporter carrying a large transformer",
   },
-  {
-    id: "industrial-storage",
-    title: "Industrial Storage",
-    body: "Secure indoor and outdoor yards with crane access between phases of work.",
-    photo: null,
+  "lift-planning-engineering": {
+    src: "/photos/cases/tnt-142-refinery-reactor-exchange.jpg",
+    alt: "Large crawler crane rigged for a heavy lift at a refinery",
   },
-  {
-    id: "wind-energy",
-    title: "Wind Energy",
-    body: "Turbine erection, blade and component exchange across the wind corridor.",
-    photo: {
-      src: "/photos/cases/tnt-098-wind-farm-turbine-erection.jpg",
-      alt: "Two crawler cranes erecting a wind turbine tower section",
-    },
-  },
-];
+  "industrial-storage": null,
+};
+
+export const CAPABILITIES: Capability[] = SERVICES.map((s) => ({
+  id: s.id,
+  title: s.label,
+  body: s.short,
+  photo: CAPABILITY_PHOTOS[s.id],
+}));

@@ -3,6 +3,16 @@
 /**
  * SECTION 5 — FULL-SCOPE CAPABILITY  (project lifecycle)
  *
+ * 2026-10-09 — NOW READS services.ts, and every card links to its detail
+ * block on the new /services page (/services#<id>). The six changed with it,
+ * on request: Heavy Haul & Transport replaces Wind Energy (now a Specialized
+ * Capability on /services), in the brief's order LIFT → RIG → MOVE → HAUL →
+ * PLAN → STORE. Blurbs are the catalog's one-liners; the unverified "8 to
+ * 1,300 tons" and "stamped … by in-house engineers" claims went with the old
+ * copy. The broken /crane-rental link (no such route existed) is gone too.
+ * Notes below that mention Wind Energy, /crane-rental or `?service=` links
+ * describe the previous version.
+ *
  * REVERTED TO THE ICON-CARD DESIGN (2026-09-23, on request — a reference
  * screenshot: "FULL-SCOPE CAPABILITY" eyebrow, "ONE PARTNER, END TO END"
  * heading, 6 plain icon cards in a 3×2 grid, solid-amber closing CTA panel).
@@ -65,43 +75,21 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Eyebrow, Icon, type IconName } from "./primitives";
+import { Eyebrow, Icon } from "./primitives";
 import Button from "./Button";
-import { slugify } from "./navigation";
 import TargetHighlight from "./TargetHighlight";
+import { SERVICES, serviceHref, type ServiceId } from "./services";
 
-type Stage = {
-  /** Journey position. Mirrors navigation.ts. */
-  index: string;
-  /** The verb — what this step DOES. Carries the sequence. */
-  stage: string;
-  /** The service name — what it's called and sold as. */
-  title: string;
-  blurb: string;
-  icon: IconName;
-  /** Dedicated page, when one exists — see the docblock. Every stage
-   *  without one falls back to the shared `?service=...#quote` link. */
-  href?: string;
+/** The verb each card carries — what that step DOES. Card content otherwise
+ *  comes straight from services.ts, the site-wide catalog. */
+const STAGE_VERB: Record<ServiceId, string> = {
+  "crane-rental": "Lift",
+  "specialized-rigging": "Rig",
+  "machinery-moving": "Move",
+  "heavy-haul-transport": "Haul",
+  "lift-planning-engineering": "Plan",
+  "industrial-storage": "Store",
 };
-
-const STAGE_ICONS: Record<string, string> = {
-  "Specialized Rigging": "/icons/hook.svg",
-  "Machinery Moving": "/icons/forklift.svg",
-  "Industrial Storage": "/icons/cart.svg",
-  "Wind Energy": "/icons/tower-crane.svg",
-  // Crane Rental and "Lift Planning & Engineering" have no dedicated icon
-  // asset — both fall through to the /icons/crane.svg default below, which
-  // (for Crane Rental at least) is the right icon anyway.
-};
-
-const STAGES: Stage[] = [
-  { index: "01", stage: "Lift", title: "Crane Rental", blurb: "Operated or bare rental — by the day, month, or project, from 8 to 1,300 tons. TNT's core service and the fleet every other capability on this page supports.", icon: "rental", href: "/crane-rental" },
-  { index: "02", stage: "Plan", title: "Lift Planning & Engineering", blurb: "Stamped lift plans, ground-bearing analysis, and crane selection — signed by in-house engineers before a single machine mobilizes.", icon: "engineering" },
-  { index: "03", stage: "Rig", title: "Specialized Rigging", blurb: "Hydraulic gantries, jack-and-slide, and precision skidding where a crane can't reach.", icon: "rigging" },
-  { index: "04", stage: "Move", title: "Machinery Moving", blurb: "SPMTs and skates for turnkey plant relocation — set, aligned, and levelled in place.", icon: "heavylift" },
-  { index: "05", stage: "Store", title: "Industrial Storage", blurb: "Secure indoor and outdoor yards with crane access between phases of work.", icon: "storage" },
-  { index: "06", stage: "Renewable", title: "Wind Energy", blurb: "Turbine erection, blade and component exchange across the wind corridor.", icon: "wind" },
-];
 
 export default function CoreServices() {
 
@@ -135,10 +123,10 @@ export default function CoreServices() {
             Equal heights come from the grid + `h-full` + column flex, not from
             trimming the copy. */}
         <ol className="mt-10 grid gap-4 sm:mt-12 sm:grid-cols-2 lg:grid-cols-3">
-          {STAGES.map((s) => (
+          {SERVICES.map((s) => (
             <li
-              key={s.index}
-              id={slugify(s.title)}
+              key={s.id}
+              id={s.id}
               className="svc-tile group relative scroll-mt-32"
             >
               {/* No shadow at any state. Depth comes from the hairline border
@@ -153,7 +141,7 @@ export default function CoreServices() {
                     className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-tnt-amber/10 text-tnt-amber transition-colors duration-300 group-hover:bg-black group-hover:text-tnt-amber"
                   >
                     <Image
-                      src={STAGE_ICONS[s.title] ?? "/icons/crane.svg"}
+                      src={s.glyph}
                       alt=""
                       width={24}
                       height={24}
@@ -168,7 +156,7 @@ export default function CoreServices() {
                       {s.index}
                     </span>
                     <span className="font-body text-[10px] font-bold tracking-[0.2em] text-tnt-amber uppercase">
-                      {s.stage}
+                      {STAGE_VERB[s.id]}
                     </span>
                   </span>
                 </div>
@@ -176,14 +164,14 @@ export default function CoreServices() {
                 <h3
                   className="mt-5 font-display text-xl tracking-wide uppercase text-black"
                 >
-                  {s.title}
+                  {s.label}
                 </h3>
                 {/* flex-1 pushes the CTA to a common baseline across the row,
                     so blurbs of different lengths still align. */}
                 <p
                   className="mt-2 flex-1 font-body text-[13px] leading-relaxed text-black/60"
                 >
-                  {s.blurb}
+                  {s.short}
                 </p>
 
                 {/* Hairline separator instead of a shadow to divide the card's
@@ -215,11 +203,11 @@ export default function CoreServices() {
                     instead of Next's client-side route swap (measured via
                     `performance.getEntriesByType("navigation")[0].type`). */}
                 <Link
-                  href={s.href ?? `?service=${slugify(s.title)}#quote`}
+                  href={serviceHref(s)}
                   className="absolute inset-0 rounded-xl focus-visible:ring-2 focus-visible:ring-tnt-amber focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                   <span className="sr-only">
-                    {s.title} — stage {s.index}, {s.stage}. Learn more.
+                    {s.label} — stage {s.index}, {STAGE_VERB[s.id]}. Learn more.
                   </span>
                 </Link>
               </article>

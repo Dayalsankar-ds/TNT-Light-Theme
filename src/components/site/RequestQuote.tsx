@@ -31,14 +31,10 @@ import { useState, type FormEvent } from "react";
 import { Eyebrow } from "./primitives";
 import Button from "./Button";
 import RevealText from "./RevealText";
+import { SERVICES as CATALOG } from "./services";
 
-const SERVICES = [
-  "Crane Rental",
-  "Specialized Rigging",
-  "Machinery Moving",
-  "Industrial Storage",
-  "Engineering",
-];
+// The site's service catalog (services.ts) — one list site-wide.
+const SERVICES = CATALOG.map((s) => s.label);
 
 // The six classes in the nav's Load Chart menu, so the form and the fleet
 // speak the same taxonomy. "Not sure" is a real answer — a rep will recommend.
@@ -57,7 +53,7 @@ export const CRANE_TYPES = [
 
 // US ZIP (12345 or 12345-6789) or Canadian postal code (A1A 1A1) — TNT
 // Canada and Eagle West quote Canadian jobsites.
-const POSTAL_PATTERN = "\\d{5}(-\\d{4})?|[A-Za-z]\\d[A-Za-z] ?\\d[A-Za-z]\\d";
+export const POSTAL_PATTERN = "\\d{5}(-\\d{4})?|[A-Za-z]\\d[A-Za-z] ?\\d[A-Za-z]\\d";
 
 export const field =
   "w-full rounded-md border border-black/15 bg-white px-4 py-3 font-body text-sm text-black placeholder:text-tnt-meta focus:border-tnt-amber focus:ring-1 focus:ring-tnt-amber focus:outline-none";
