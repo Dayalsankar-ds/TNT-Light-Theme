@@ -357,7 +357,7 @@ export default function Timeline() {
               >
                 <span
                   aria-hidden="true"
-                  className="absolute top-2 -left-[2.45rem] h-4 w-4 rounded-full border-4 border-white bg-tnt-amber ring-2 ring-tnt-amber"
+                  className="absolute top-2 -left-[2.45rem] h-4 w-4 rounded-full border-4 border-tnt-gray bg-tnt-amber ring-2 ring-tnt-amber"
                 />
                 <p className="font-display text-5xl leading-none text-black">{ms.year}</p>
                 <p className="mt-2 font-body text-xs font-bold tracking-[0.18em] text-tnt-amber uppercase">{ms.place}</p>

@@ -18,8 +18,8 @@ import { PARENT } from "@/components/about/aboutData";
  * src/components/about/aboutData.ts.
  *
  * Section rhythm (no two adjacent sections alike): split hero (black panel
- * + photo) → white story → off-white family → white capabilities → black
- * reach (the one dark band) → grey safety → gold close.
+ * + photo) → white story → grey timeline → off-white family → white
+ * capabilities → off-white reach → grey safety → gold close.
  *
  * Outbound links all target homepage sections (/#services, /#coverage,
  * /#safety, /#quote) — there are no separate pages for those yet. Hero.tsx
@@ -76,15 +76,16 @@ const SAFETY_POINTS = [
  * two-stop linear gradient fades at a constant rate, which the eye reads as
  * a band with a visible start line; these stops follow an ease-in-out curve
  * (the "easing gradients" technique), so the black thins out gradually and
- * there is no edge where the fade begins or ends.
+ * there is no edge where the fade begins or ends. `rgb` is the colour being
+ * faded from (black by default; the footprint section uses its off-white).
  */
-function easedFade(direction: string) {
+function easedFade(direction: string, rgb = "0,0,0") {
   const stops: [number, number][] = [
     [1, 0], [0.987, 8.1], [0.951, 15.5], [0.896, 22.5], [0.825, 29], [0.741, 35.3],
     [0.648, 41.2], [0.55, 47.1], [0.45, 52.9], [0.352, 58.8], [0.259, 64.7],
     [0.175, 71], [0.104, 77.5], [0.049, 84.5], [0.013, 91.9], [0, 100],
   ];
-  return `linear-gradient(${direction}, ${stops.map(([a, p]) => `rgba(0,0,0,${a}) ${p}%`).join(", ")})`;
+  return `linear-gradient(${direction}, ${stops.map(([a, p]) => `rgba(${rgb},${a}) ${p}%`).join(", ")})`;
 }
 
 export default function AboutPage() {
@@ -180,10 +181,14 @@ export default function AboutPage() {
               />
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className="mt-20 sm:mt-24">
-            <Timeline />
-          </div>
+      {/* 02b — TIMELINE ("The route so far"), its own grey band so it reads
+          apart from the white story above. */}
+      <section aria-label="TNT timeline" className="bg-tnt-gray">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+          <Timeline />
         </div>
       </section>
 
@@ -267,35 +272,35 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 05 — NORTH AMERICAN REACH (dark band) */}
-      <section id="our-reach" aria-labelledby="reach-heading" className="scroll-mt-32 bg-black text-white">
+      {/* 05 — NORTH AMERICAN REACH */}
+      <section id="our-reach" aria-labelledby="reach-heading" className="scroll-mt-32 bg-[#f5f4f0] text-black">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
           <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-20">
             <div>
               <Eyebrow>Our Footprint</Eyebrow>
-              <h2 id="reach-heading" className="mt-4 font-display text-5xl leading-[0.95] tracking-wide uppercase sm:text-6xl">
+              <h2 id="reach-heading" className="mt-4 font-display text-5xl leading-[0.95] tracking-wide text-black uppercase sm:text-6xl">
                 Local expertise.
                 <br />
                 North American reach.
               </h2>
-              <p className="mt-6 max-w-xl font-body text-lg leading-relaxed text-white/70">
+              <p className="mt-6 max-w-xl font-body text-lg leading-relaxed text-black/70">
                 Customers work with a branch that knows their region, its sites, its weather and its
                 people. Behind that branch is a family that can coordinate equipment and crews across
                 the United States and Canada when a project calls for more.
               </p>
-              <dl className="mt-12 grid grid-cols-2 border-t border-white/15">
+              <dl className="mt-12 grid grid-cols-2 border-t border-black/15">
                 {STATS.map((s, i) => (
                   <div
                     key={s.label}
-                    className={`py-7 ${i % 2 === 0 ? "border-r border-white/15 pr-6" : "pl-8"} ${i < 2 ? "border-b border-white/15" : ""}`}
+                    className={`py-7 ${i % 2 === 0 ? "border-r border-black/15 pr-6" : "pl-8"} ${i < 2 ? "border-b border-black/15" : ""}`}
                   >
                     <dt className="sr-only">{s.label}</dt>
                     <dd>
-                      <span className="font-display text-5xl text-white sm:text-6xl">
+                      <span className="font-display text-5xl text-black sm:text-6xl">
                         {s.value.replace(/\+$/, "")}
                         {s.value.endsWith("+") && <span className="text-tnt-amber">+</span>}
                       </span>
-                      <span className="mt-2 block font-body text-sm text-white/60">{s.label}</span>
+                      <span className="mt-2 block font-body text-sm text-black/60">{s.label}</span>
                     </dd>
                   </div>
                 ))}
@@ -309,13 +314,13 @@ export default function AboutPage() {
                     <span aria-hidden="true" className="h-px w-9 bg-tnt-amber" />
                     {country.country}
                   </h3>
-                  <ul className="mt-4 divide-y divide-white/10 border-y border-white/10">
+                  <ul className="mt-4 divide-y divide-black/10 border-y border-black/10">
                     {country.rows.map((r) => (
                       <li key={r.company} className="flex flex-wrap items-center justify-between gap-3 py-4">
                         <span className="font-display text-xl tracking-wide uppercase">{r.company}</span>
                         <span className="flex flex-wrap gap-2">
                           {r.areas.map((a) => (
-                            <span key={a} className="rounded-md border border-white/20 px-2.5 py-1 font-mono text-xs tracking-wider text-white/85">
+                            <span key={a} className="rounded-md border border-black/20 bg-white px-2.5 py-1 font-mono text-xs tracking-wider text-black/80">
                               {a}
                             </span>
                           ))}
@@ -325,7 +330,7 @@ export default function AboutPage() {
                   </ul>
                 </div>
               ))}
-              <Button href="/#coverage" variant="primary" onDark>
+              <Button href="/#coverage" variant="primary">
                 Explore Our Locations
               </Button>
             </div>
@@ -339,11 +344,11 @@ export default function AboutPage() {
             sizes="100vw"
             className="object-cover"
           />
-          {/* Eased fade from the section's black into the photo (same curve as
+          {/* Eased fade from the section's off-white into the photo (same curve as
               the hero; see easedFade). Tall (55%) because the sky here is
               bright, and it starts 2px above the photo so its top edge can't
               show as a hairline. */}
-          <div aria-hidden="true" className="absolute inset-x-0 -top-0.5 h-[calc(55%+2px)]" style={{ backgroundImage: easedFade("to bottom") }} />
+          <div aria-hidden="true" className="absolute inset-x-0 -top-0.5 h-[calc(55%+2px)]" style={{ backgroundImage: easedFade("to bottom", "245,244,240") }} />
         </div>
       </section>
 
