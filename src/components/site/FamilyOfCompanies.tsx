@@ -2,7 +2,10 @@
  * FAMILY OF COMPANIES — built 2026-10-04 from a supplied design, replacing
  * FamilyStripV2.tsx (the light logo shelf, now unrendered — see page.tsx).
  * Ported unchanged from the TNT Dark project the same day, on request — the
- * section is identical in both themes.
+ * section is identical in both themes. TNT Canada (fifth company, recounted
+ * stats, count-agnostic dividers, compact cells, centred lone last cell)
+ * ported from TNT Dark 2026-10-17; TNT Light keeps its own colors and its
+ * corrected JMS region (Montana and South Dakota).
  *
  * Split layout: a black brand panel on the left (eyebrow, "Different names.
  * One TNT." headline, TNT parent lockup, four stats) and a warm off-white
@@ -25,7 +28,9 @@
 
 import Button from "./Button";
 
-const COMPANIES = [
+/** `logoText`: words set beside the logo image, for a company shown as the
+ *  TNT lockup plus a name rather than its own mark (TNT Canada). */
+const COMPANIES: { name: string; logo: string; logoText?: string; region: string; area: string }[] = [
   {
     name: "Southway Crane & Rigging",
     logo: "/brand/southway.svg",
@@ -50,6 +55,18 @@ const COMPANIES = [
     region: "Montana and South Dakota",
     area: "Northern Rockies",
   },
+  // Added 2026-10-17, on request ("Add that TNT Logo with Canada text"). No
+  // TNT Canada mark exists in the brand files, so it's the TNT logo with
+  // "Canada" set beside it. Branches per branchLocatorData.ts ("TNT Crane &
+  // Rigging Canada": Brooks, Calgary, Edmonton, Fort McMurray, Lethbridge,
+  // Medicine Hat — all Alberta).
+  {
+    name: "TNT Crane & Rigging Canada",
+    logo: "/brand/tnt.svg",
+    logoText: "Canada",
+    region: "Alberta",
+    area: "Calgary, Edmonton, Fort McMurray",
+  },
 ];
 
 /** Family-specific figures, all counted from COMPANIES above. The design's
@@ -58,12 +75,12 @@ const COMPANIES = [
  *  (StorySlideshow.tsx) already shows every one of them. If a company or
  *  region changes above, recount these. */
 const STATS: { value: string; label: string }[] = [
-  { value: "4", label: "Regional operating companies" },
+  { value: "5", label: "Regional operating companies" },
   { value: "2", label: "Countries, US and Canada" },
-  // GA, AL, SC, FL, CO, WY, NM, MT, SD + British Columbia (JMS covers
-  // Montana and South Dakota per its own site — corrected from Idaho
-  // 2026-10-08; the count is unchanged)
-  { value: "10", label: "States and provinces covered" },
+  // GA, AL, SC, FL, CO, WY, NM, MT, SD + British Columbia, Alberta (JMS
+  // covers Montana and South Dakota per its own site — corrected from Idaho
+  // 2026-10-08; Alberta added with TNT Canada 2026-10-17)
+  { value: "11", label: "States and provinces covered" },
   { value: "1", label: "Shared fleet and iCARE safety program" },
 ];
 
@@ -131,15 +148,51 @@ export default function FamilyOfCompanies() {
         </div>
 
         <ul className="grid sm:grid-cols-2">
-          {COMPANIES.map((c, i) => (
+          {COMPANIES.map((c, i) => {
+            // Dividers for any count, not just 2×2: a rule under every cell
+            // except the last (stacked) or the last row (two columns), and a
+            // vertical rule on a left-column cell only when it has a
+            // right-hand neighbour.
+            //
+            // COMPACT CELLS (2026-10-17, on request — "adjust the spacing
+            // between all logos and align inside the screen size"): adding
+            // TNT Canada made a third row, and with each cell held to a 22rem
+            // minimum the grid grew the section to ~1,320px at 1440×900. The
+            // minimum is gone, padding and the logo→caption gap are tighter,
+            // and logos are a touch smaller, so the grid fits inside the left
+            // panel's height again.
+            const n = COMPANIES.length;
+            const lastRowStart = n % 2 === 0 ? n - 2 : n - 1;
+            const left = i % 2 === 0;
+            // A company left alone on the last row (odd count — TNT Canada
+            // today) spans both columns and is centred in it, on request
+            // 2026-10-17 ("Align it on center"). Phones stack one per row, so
+            // it stays left-aligned there like the rest.
+            const lone = n % 2 === 1 && i === n - 1;
+            return (
             <li
               key={c.name}
-              className={`flex flex-col gap-10 py-10 sm:min-h-[22rem] sm:py-14 ${
-                i % 2 === 0 ? "sm:border-r sm:border-black/15 sm:pr-10" : "sm:pl-10"
-              } ${i < 2 ? "border-b border-black/15" : ""} ${i === 2 ? "border-b border-black/15 sm:border-b-0" : ""}`}
+              className={`flex flex-col gap-6 py-8 sm:py-10 ${
+                lone
+                  ? "sm:col-span-2 sm:items-center sm:text-center"
+                  : left
+                    ? `sm:pr-10 ${i + 1 < n ? "sm:border-r sm:border-black/15" : ""}`
+                    : "sm:pl-10"
+              } ${i < n - 1 ? "border-b border-black/15" : ""} ${i >= lastRowStart ? "sm:border-b-0" : ""}`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={c.logo} alt={c.name} className="h-14 w-auto max-w-full self-start object-contain sm:h-[3.75rem]" />
+              {c.logoText ? (
+                <div className={`flex items-center gap-3 self-start ${lone ? "sm:self-center" : ""}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={c.logo} alt="" className="h-11 w-auto object-contain sm:h-12" />
+                  <span className="font-display text-3xl leading-none text-black uppercase sm:text-[2.1rem]">
+                    {c.logoText}
+                  </span>
+                  <span className="sr-only">{c.name}</span>
+                </div>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={c.logo} alt={c.name} className={`h-11 w-auto max-w-full self-start object-contain sm:h-12 ${lone ? "sm:self-center" : ""}`} />
+              )}
               <div className="mt-auto">
                 <p className="font-body text-xs font-semibold tracking-[0.16em] text-black/55 uppercase">
                   A TNT Crane &amp; Rigging company
@@ -148,7 +201,8 @@ export default function FamilyOfCompanies() {
                 <p className="mt-1 font-body text-base text-black/65">{c.area}</p>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       </div>
     </section>

@@ -142,6 +142,15 @@ export default function AboutPage() {
               Explore Our Story
             </ScrollButton>
           </div>
+          {/* TNT Canada mark (2026-10-16, on request). No separate TNT Canada
+              logo file exists, so it's the TNT logo with a CANADA label — the
+              same treatment as TNT Canada in the Family selector. */}
+          <div className="mt-12 flex w-fit flex-col items-center gap-2">
+            <Image src="/brand/tnt.svg" alt="TNT Crane & Rigging Canada" width={160} height={58} className="h-12 w-auto" />
+            <span aria-hidden="true" className="font-body text-xs font-bold tracking-[0.3em] text-white uppercase">
+              Canada
+            </span>
+          </div>
         </div>
       </section>
 
