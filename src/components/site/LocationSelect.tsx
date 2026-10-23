@@ -60,7 +60,7 @@ export function wasEscapeHandled(e: KeyboardEvent) {
 
 function BrandMark({ brand }: { brand: string }) {
   return (
-    <span className="flex h-8 w-[88px] shrink-0 items-center justify-end text-right font-mono text-[9px] leading-tight tracking-[0.06em] text-black/50 uppercase">
+    <span className="flex h-8 w-[88px] shrink-0 items-center justify-end text-right font-body text-[9px] leading-tight tracking-[0.06em] text-black/50 uppercase">
       {brand}
     </span>
   );
@@ -203,7 +203,7 @@ export default function LocationSelect({
     <div className="relative">
       <p
         id="nav-location-label"
-        className="font-mono text-[11px] tracking-[0.14em] text-black/45 uppercase"
+        className="font-body text-[11px] tracking-[0.14em] text-black/45 uppercase"
       >
         Choose Location
       </p>
@@ -230,7 +230,7 @@ export default function LocationSelect({
           <span className="block truncate font-body text-sm font-semibold text-black">
             {selected.label}
           </span>
-          <span className="block truncate font-mono text-[11px] text-black/45">
+          <span className="block truncate font-body text-[11px] text-black/45">
             {scopeLine}
           </span>
         </span>

@@ -202,7 +202,7 @@ export default function CraneCardGrid({
       </aside>
 
       <div>
-        <p className="font-mono text-[10px] tracking-[0.12em] text-tnt-amber tabular-nums uppercase sm:text-xs sm:tracking-[0.14em]">
+        <p className="font-body text-[10px] tracking-[0.12em] text-tnt-amber tabular-nums uppercase sm:text-xs sm:tracking-[0.14em]">
           Showing {rows.length} of {models.length}
         </p>
 
@@ -223,7 +223,7 @@ export default function CraneCardGrid({
                     className="absolute inset-0 h-full w-full object-cover"
                   />
                   {cardPhoto.isStock && (
-                    <span className="absolute top-3 left-3 rounded-full bg-black/60 px-2.5 py-1 font-mono text-[10px] tracking-[0.1em] text-white/80 uppercase backdrop-blur-sm">
+                    <span className="absolute top-3 left-3 rounded-full bg-black/60 px-2.5 py-1 font-body text-[10px] tracking-[0.1em] text-white/80 uppercase backdrop-blur-sm">
                       Stock photo
                     </span>
                   )}
@@ -240,7 +240,7 @@ export default function CraneCardGrid({
                     {m.model}
                   </h3>
 
-                  <p className="mt-4 font-mono text-sm tracking-[0.08em] text-tnt-amber tabular-nums uppercase">
+                  <p className="mt-4 font-body text-sm tracking-[0.08em] text-tnt-amber tabular-nums uppercase">
                     {m.capacityTons} Ton
                   </p>
 

@@ -8,8 +8,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-open-sans);
 
   /* Hero-only palette — the existing HeroScrollExperience depends on these.
      Do NOT repoint them; the unified site system lives in the tnt-* set below. */
@@ -62,7 +61,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  /* Geist, inherited by the hero. New sections set their own font explicitly. */
+  /* Open Sans — the only text face (Geist/Geist Mono removed 2026-10-23). */
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 

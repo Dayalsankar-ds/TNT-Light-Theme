@@ -49,7 +49,7 @@ Do not create a `tailwind.config.ts` or install `tailwindcss-cli`/`autoprefixer`
 
 ## Typography system
 
-`src/app/layout.tsx` loads Geist, Geist Mono, and Open Sans via `next/font/google` as CSS variables. `globals.css` maps them in `@theme inline`: body default is Geist (`--font-sans`, applied on `body` — the old Arial hard-override was removed); sections use `font-body` (Open Sans) explicitly. Display type (`font-display`) is **Impact**, self-hosted via `next/font/local` from `src/app/fonts/Impact.ttf` (2026-07-30, replacing the prior SF Pro system stack) — commercially licensed; webfont-license coverage was confirmed with the user before embedding it. No forced font-weight override (Impact ships one static weight; forcing 700 would fake-bold it). Anton and Oswald were removed 2026-07-27 as unused; don't reintroduce them without a decision.
+`src/app/layout.tsx` loads Open Sans via `next/font/google` as a CSS variable. `globals.css` maps it in `@theme inline` to both `--font-sans` (the `body` default) and `--font-body`. Geist and Geist Mono were removed 2026-10-23 at the user's request; former `font-mono` labels now use `font-body`, and `font-mono` is no longer mapped — don't reintroduce either without a decision. Display type (`font-display`) is **Impact**, self-hosted via `next/font/local` from `src/app/fonts/Impact.ttf` (2026-07-30, replacing the prior SF Pro system stack) — commercially licensed; webfont-license coverage was confirmed with the user before embedding it. No forced font-weight override (Impact ships one static weight; forcing 700 would fake-bold it). Anton and Oswald were removed 2026-07-27 as unused; don't reintroduce them without a decision.
 
 ## Next.js 16 API drift
 

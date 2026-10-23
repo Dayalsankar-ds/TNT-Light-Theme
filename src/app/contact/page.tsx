@@ -110,7 +110,7 @@ export default async function ContactPage({
                         <a
                           href={d.href}
                           className={`inline-block py-1 font-semibold whitespace-nowrap text-black hover:text-tnt-maroon ${
-                            d.mono ? "font-mono text-base" : "font-body text-sm"
+                            d.mono ? "font-body text-base" : "font-body text-sm"
                           }`}
                         >
                           {d.value}

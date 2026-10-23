@@ -329,7 +329,7 @@ export default function AboutPage() {
                         <span className="font-display text-xl tracking-wide uppercase">{r.company}</span>
                         <span className="flex flex-wrap gap-2">
                           {r.areas.map((a) => (
-                            <span key={a} className="rounded-md border border-black/20 bg-white px-2.5 py-1 font-mono text-xs tracking-wider text-black/80">
+                            <span key={a} className="rounded-md border border-black/20 bg-white px-2.5 py-1 font-body text-xs tracking-wider text-black/80">
                               {a}
                             </span>
                           ))}

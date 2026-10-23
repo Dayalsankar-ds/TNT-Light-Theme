@@ -216,7 +216,7 @@ export default function BranchLocator({ branches }: BranchLocatorData) {
                     />
                     <span className="min-w-0 flex-1">
                       <span className="block">{b.city}</span>
-                      <span className="block truncate font-mono text-[11px] text-black/45">
+                      <span className="block truncate font-body text-[11px] text-black/45">
                         {b.brand}
                       </span>
                     </span>
@@ -299,13 +299,13 @@ export default function BranchLocator({ branches }: BranchLocatorData) {
                   glance. */}
               <a
                 href={selected.phone.href}
-                className="mt-4 flex items-center gap-2 font-mono text-base font-semibold text-black transition-colors hover:text-tnt-amber"
+                className="mt-4 flex items-center gap-2 font-body text-base font-semibold text-black transition-colors hover:text-tnt-amber"
               >
                 <Phone aria-hidden="true" className="h-4 w-4 text-tnt-amber" />
                 {selected.phone.display}
               </a>
 
-              <p className="mt-5 font-mono text-[11px] tracking-[0.14em] text-black/45 uppercase">
+              <p className="mt-5 font-body text-[11px] tracking-[0.14em] text-black/45 uppercase">
                 Available Services
               </p>
               {/* Empty = nothing confirmed for this company yet (services.ts),

@@ -402,7 +402,7 @@ export default function SiteNav() {
           <div className="hidden items-center gap-5 lg:flex">
             <a
               href="tel:+18007992505"
-              className="hidden font-mono text-base font-semibold whitespace-nowrap text-white transition-colors hover:text-tnt-amber 2xl:block"
+              className="hidden font-body text-base font-semibold whitespace-nowrap text-white transition-colors hover:text-tnt-amber 2xl:block"
             >
               1-800-799-2505
             </a>
@@ -668,7 +668,7 @@ export default function SiteNav() {
                       <div className="mt-2 px-3">
                         <label
                           htmlFor="mobile-location"
-                          className="font-mono text-[11px] tracking-[0.14em] text-black/45 uppercase"
+                          className="font-body text-[11px] tracking-[0.14em] text-black/45 uppercase"
                         >
                           Choose Location
                         </label>
@@ -694,7 +694,7 @@ export default function SiteNav() {
                     )}
                     {cols.map((col) => (
                       <div key={col.no} className="mt-2">
-                        <p className="px-3 font-mono text-[11px] tracking-[0.14em] text-tnt-amber uppercase">
+                        <p className="px-3 font-body text-[11px] tracking-[0.14em] text-tnt-amber uppercase">
                           {col.heading}
                         </p>
                         <ul className="mt-1">
@@ -706,13 +706,13 @@ export default function SiteNav() {
                                 className="flex items-center gap-3 rounded-md px-3 py-2.5 font-body text-[15px] text-black/75 hover:bg-black/5 hover:text-tnt-amber"
                               >
                                 {item.index && (
-                                  <span className="font-mono text-[11px] text-black/30 tabular-nums">
+                                  <span className="font-body text-[11px] text-black/30 tabular-nums">
                                     {item.index}
                                   </span>
                                 )}
                                 <span className="flex-1">{item.label}</span>
                                 {item.meta && (
-                                  <span className="font-mono text-[11px] text-black/40 tabular-nums">
+                                  <span className="font-body text-[11px] text-black/40 tabular-nums">
                                     {item.meta}
                                   </span>
                                 )}
@@ -732,7 +732,7 @@ export default function SiteNav() {
             <a
               href="tel:+18007992505"
               onClick={() => setMobileOpen(false)}
-              className="block rounded-md px-3 py-3 font-mono text-base font-semibold text-tnt-amber hover:bg-black/5"
+              className="block rounded-md px-3 py-3 font-body text-base font-semibold text-tnt-amber hover:bg-black/5"
             >
               1-800-799-2505
             </a>
@@ -790,7 +790,7 @@ function FamilyFilters({
             type="button"
             onClick={onClear}
             aria-pressed={none}
-            className={`flex h-12 min-w-20 items-center justify-center rounded-sm border px-3 font-mono text-[10px] tracking-[0.08em] uppercase transition-colors ${
+            className={`flex h-12 min-w-20 items-center justify-center rounded-sm border px-3 font-body text-[10px] tracking-[0.08em] uppercase transition-colors ${
               none
                 ? "border-tnt-amber bg-tnt-amber text-black"
                 : "border-black/15 text-black/65 hover:border-tnt-amber/60 hover:text-tnt-amber"
@@ -867,7 +867,7 @@ function PanelColumn({ col }: { col: NavColumn }) {
               className="group flex items-center gap-3 rounded-md px-3 py-3 transition-colors hover:bg-black/5"
             >
               {item.index && (
-                <span className="font-mono text-[12px] text-black/30 tabular-nums transition-colors group-hover:text-tnt-amber">
+                <span className="font-body text-[12px] text-black/30 tabular-nums transition-colors group-hover:text-tnt-amber">
                   {item.index}
                 </span>
               )}
@@ -886,7 +886,7 @@ function PanelColumn({ col }: { col: NavColumn }) {
                 {item.label}
               </span>
               {item.meta && (
-                <span className="ml-auto font-mono text-[12px] whitespace-nowrap text-black/40 tabular-nums">
+                <span className="ml-auto font-body text-[12px] whitespace-nowrap text-black/40 tabular-nums">
                   {item.meta}
                 </span>
               )}

@@ -41,7 +41,7 @@ function Row({ c }: { c: RegionalContact }) {
           <a
             key={p.display}
             href={p.href}
-            className="flex flex-wrap items-baseline gap-x-2 font-mono text-[15px] font-semibold text-black transition-colors hover:text-tnt-maroon"
+            className="flex flex-wrap items-baseline gap-x-2 font-body text-[15px] font-semibold text-black transition-colors hover:text-tnt-maroon"
           >
             <Phone aria-hidden="true" className="h-3.5 w-3.5 translate-y-0.5 text-tnt-amber" />
             {p.display}

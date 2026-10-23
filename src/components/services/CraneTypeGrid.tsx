@@ -67,12 +67,12 @@ export default function CraneTypeGrid({
                   />
                 )}
                 {!t.photo && (
-                  <span className={`absolute inset-0 flex items-center justify-center font-mono text-[10px] tracking-[0.16em] ${t0.pending} uppercase`}>
+                  <span className={`absolute inset-0 flex items-center justify-center font-body text-[10px] tracking-[0.16em] ${t0.pending} uppercase`}>
                     Photo pending
                   </span>
                 )}
                 {t.photo?.stock && (
-                  <span className="absolute right-3 bottom-3 rounded bg-black/70 px-2 py-0.5 font-mono text-[10px] tracking-wider text-white/70 uppercase">
+                  <span className="absolute right-3 bottom-3 rounded bg-black/70 px-2 py-0.5 font-body text-[10px] tracking-wider text-white/70 uppercase">
                     Stock photo
                   </span>
                 )}

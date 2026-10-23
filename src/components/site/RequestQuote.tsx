@@ -108,7 +108,7 @@ export default function RequestQuote() {
               Tell us about the lift and a TNT rep will follow up with capacity,
               availability, and pricing. Prefer to talk it through?
             </p>
-            <p className="mt-2 font-mono text-sm text-tnt-navy">
+            <p className="mt-2 font-body text-sm text-tnt-navy">
               Call 1-800-799-2505 — 24/7.
             </p>
           </div>

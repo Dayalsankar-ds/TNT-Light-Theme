@@ -68,7 +68,7 @@ export default function ContactSection() {
                       <dt className="font-body text-[11px] font-semibold tracking-[0.16em] text-black/50 uppercase">
                         {p.label}
                       </dt>
-                      <dd className="mt-0.5 font-mono text-lg text-black">
+                      <dd className="mt-0.5 font-body text-lg text-black">
                         {p.value}
                       </dd>
                     </span>
@@ -113,7 +113,7 @@ export default function ContactSection() {
                         {r.region}
                       </span>
                     </span>
-                    <span className="shrink-0 font-mono text-sm text-tnt-amber">
+                    <span className="shrink-0 font-body text-sm text-tnt-amber">
                       {r.phone}
                     </span>
                   </a>

@@ -151,7 +151,7 @@ export default function CoreServices() {
                   </span>
                   <span className="flex items-center gap-2 pt-1">
                     <span
-                      className="font-mono text-[11px] tabular-nums transition-colors duration-300 group-hover:text-tnt-amber text-black/30"
+                      className="font-body text-[11px] tabular-nums transition-colors duration-300 group-hover:text-tnt-amber text-black/30"
                     >
                       {s.index}
                     </span>

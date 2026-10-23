@@ -313,7 +313,7 @@ export default function EquipmentGuide() {
                     actual TNT jobsite photo are different claims; this is
                     the one place on the card that says which is which. */}
                 {!t.isRealFleetPhoto && (
-                  <span className="absolute top-3 right-3 rounded-full bg-black/60 px-2.5 py-1 font-mono text-[10px] tracking-[0.1em] text-white/80 uppercase backdrop-blur-sm">
+                  <span className="absolute top-3 right-3 rounded-full bg-black/60 px-2.5 py-1 font-body text-[10px] tracking-[0.1em] text-white/80 uppercase backdrop-blur-sm">
                     Stock photo
                   </span>
                 )}

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Open_Sans } from "next/font/google";
+import { Open_Sans } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import SiteNav from "@/components/site/SiteNav";
@@ -7,18 +7,7 @@ import SiteFooter from "@/components/site/SiteFooter";
 import SmoothScroll from "@/components/SmoothScroll";
 import ChatWidget from "@/components/site/ChatWidget";
 
-// Geist stays the body default so the existing hero's inherited font is unchanged.
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-// Body face for the section system (`font-body`).
+// Single text face: page default (`font-sans`) and `font-body`.
 const openSans = Open_Sans({
   variable: "--font-open-sans",
   subsets: ["latin"],
@@ -53,7 +42,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${openSans.variable} ${impact.variable} h-full antialiased`}
+      className={`${openSans.variable} ${impact.variable} h-full antialiased`}
     >
       <body className="min-h-full">
         {/* Inertial smooth scroll + single GSAP rAF loop for all scroll motion */}

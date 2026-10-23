@@ -231,12 +231,12 @@ export default function ServicesPage() {
                       ) : (
                         <div className="flex h-full flex-col items-center justify-center gap-3 bg-[linear-gradient(135deg,#000_0%,#242424_100%)]">
                           <Icon name={s.icon} className="h-12 w-12 text-tnt-amber" />
-                          <span className="font-mono text-[10px] tracking-[0.16em] text-white/50 uppercase">
+                          <span className="font-body text-[10px] tracking-[0.16em] text-white/50 uppercase">
                             Facility photo pending
                           </span>
                         </div>
                       )}
-                      <span className="absolute top-4 left-4 rounded-md bg-black/80 px-2.5 py-1 font-mono text-xs tabular-nums text-tnt-amber">
+                      <span className="absolute top-4 left-4 rounded-md bg-black/80 px-2.5 py-1 font-body text-xs tabular-nums text-tnt-amber">
                         {s.index}
                       </span>
                     </div>
@@ -394,7 +394,7 @@ export default function ServicesPage() {
           <ol className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((step, i) => (
               <li key={step.title} className="border-t-2 border-black pt-5">
-                <span className="font-mono text-sm tabular-nums text-tnt-amber">
+                <span className="font-body text-sm tabular-nums text-tnt-amber">
                   Step {String(i + 1).padStart(2, "0")}
                 </span>
                 <h3 className="mt-2 font-display text-2xl tracking-wide text-black uppercase">{step.title}</h3>

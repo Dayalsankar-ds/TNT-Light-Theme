@@ -35,13 +35,13 @@ export default function TopInfoBar() {
       <div className="flex h-10 items-center justify-between gap-6 px-4 sm:px-6 lg:px-8 2xl:px-10">
         {/* Where we are + how to reach us */}
         <div className="flex items-center gap-7">
-          <span className="flex items-center gap-2 font-mono text-[12px] tracking-wide text-white/70">
+          <span className="flex items-center gap-2 font-body text-[12px] tracking-wide text-white/70">
             <Icon name="pin" className="h-4 w-4 shrink-0 text-tnt-amber" />
             Houston, TX
           </span>
           <a
             href="mailto:info@tntcrane.com"
-            className="flex items-center gap-2 font-mono text-[12px] tracking-wide text-white/70 transition-colors hover:text-tnt-amber"
+            className="flex items-center gap-2 font-body text-[12px] tracking-wide text-white/70 transition-colors hover:text-tnt-amber"
           >
             <Icon name="mail" className="h-4 w-4 shrink-0 text-tnt-amber" />
             info@tntcrane.com
@@ -52,7 +52,7 @@ export default function TopInfoBar() {
               at 1280px). Exactly one of the two is ever visible. */}
           <a
             href="tel:+18007992505"
-            className="flex items-center gap-2 font-mono text-[12px] tracking-wide text-white/70 transition-colors hover:text-tnt-amber 2xl:hidden"
+            className="flex items-center gap-2 font-body text-[12px] tracking-wide text-white/70 transition-colors hover:text-tnt-amber 2xl:hidden"
           >
             <Icon name="payment" className="h-4 w-4 shrink-0 text-tnt-amber" />
             1-800-799-2505

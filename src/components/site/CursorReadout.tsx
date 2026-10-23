@@ -76,13 +76,13 @@ export default function CursorReadout({
                 style={{ left: pos.x, top: pos.y }}
               />
               <span
-                className="absolute bottom-2 -translate-x-1/2 font-mono text-[10px] tracking-wider text-tnt-navy"
+                className="absolute bottom-2 -translate-x-1/2 font-body text-[10px] tracking-wider text-tnt-navy"
                 style={{ left: pos.x }}
               >
                 X: {Math.round(pos.x)}
               </span>
               <span
-                className="absolute left-2 -translate-y-1/2 font-mono text-[10px] tracking-wider text-tnt-navy"
+                className="absolute left-2 -translate-y-1/2 font-body text-[10px] tracking-wider text-tnt-navy"
                 style={{ top: pos.y }}
               >
                 Y: {Math.round(pos.y)}
@@ -91,7 +91,7 @@ export default function CursorReadout({
           ) : (
             /* Spec chip follows the pointer, surfacing the crane's rated data. */
             <div
-              className="absolute rounded border border-tnt-amber/70 bg-tnt-navy/85 px-3 py-2 font-mono text-[11px] leading-tight tracking-wider text-tnt-amber whitespace-nowrap uppercase shadow-lg"
+              className="absolute rounded border border-tnt-amber/70 bg-tnt-navy/85 px-3 py-2 font-body text-[11px] leading-tight tracking-wider text-tnt-amber whitespace-nowrap uppercase shadow-lg"
               style={{
                 left: pos.x,
                 top: pos.y,
