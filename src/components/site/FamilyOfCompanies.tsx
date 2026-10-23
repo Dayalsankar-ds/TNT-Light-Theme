@@ -31,6 +31,18 @@ import Button from "./Button";
 /** `logoText`: words set beside the logo image, for a company shown as the
  *  TNT lockup plus a name rather than its own mark (TNT Canada). */
 const COMPANIES: { name: string; logo: string; logoText?: string; region: string; area: string }[] = [
+  // Added 2026-10-23, on request ("add TNT USA to the right-side logo
+  // listing"). Same treatment as TNT Canada below: no separate mark, so the
+  // TNT logo with "USA" beside it. Branches per branchLocatorData.ts ("TNT
+  // Crane & Rigging": 12 in Texas, 2 in Louisiana, 2 in Oklahoma). Moved to
+  // first place 2026-10-23, on request.
+  {
+    name: "TNT Crane & Rigging USA",
+    logo: "/brand/tnt.svg",
+    logoText: "USA",
+    region: "South Central United States",
+    area: "Texas, Louisiana, Oklahoma",
+  },
   {
     name: "Southway Crane & Rigging",
     logo: "/brand/southway.svg",
@@ -75,12 +87,13 @@ const COMPANIES: { name: string; logo: string; logoText?: string; region: string
  *  (StorySlideshow.tsx) already shows every one of them. If a company or
  *  region changes above, recount these. */
 const STATS: { value: string; label: string }[] = [
-  { value: "5", label: "Regional operating companies" },
+  { value: "6", label: "Regional operating companies" },
   { value: "2", label: "Countries, US and Canada" },
-  // GA, AL, SC, FL, CO, WY, NM, MT, SD + British Columbia, Alberta (JMS
-  // covers Montana and South Dakota per its own site — corrected from Idaho
-  // 2026-10-08; Alberta added with TNT Canada 2026-10-17)
-  { value: "11", label: "States and provinces covered" },
+  // GA, AL, SC, FL, CO, WY, NM, MT, SD, TX, LA, OK + British Columbia,
+  // Alberta (JMS covers Montana and South Dakota per its own site —
+  // corrected from Idaho 2026-10-08; Alberta added with TNT Canada
+  // 2026-10-17; TX, LA, OK added with TNT USA 2026-10-23)
+  { value: "14", label: "States and provinces covered" },
   { value: "1", label: "Shared fleet and iCARE safety program" },
 ];
 
@@ -138,10 +151,9 @@ export default function FamilyOfCompanies() {
 
       {/* Right — operating companies */}
       <div className="bg-[#f5f4f0] px-6 py-16 sm:px-10 sm:py-20 lg:px-16 lg:py-24 xl:px-20">
-        <div className="flex items-center justify-between gap-4 border-b border-black/70 pb-8">
-          <p className="font-body text-[13px] font-semibold tracking-[0.18em] text-black uppercase">
-            Operating companies
-          </p>
+        {/* The "Operating companies" label that sat left of this button was
+            removed 2026-10-23, on request; the button stays right-aligned. */}
+        <div className="flex items-center justify-end gap-4 border-b border-black/70 pb-8">
           <Button href="/#coverage" variant="primary" className="shrink-0">
             Find your nearest branch
           </Button>
