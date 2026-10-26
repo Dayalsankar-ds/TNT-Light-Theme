@@ -227,7 +227,8 @@ export const NAV_GROUPS: NavGroup[] = [
   // anchor (SafetyCulture.tsx's iCARE section) the About panel's "Safety &
   // Record" item and feature card already use — one real section, now
   // reachable two ways rather than a second copy of it.
-  { label: "Safety Needs", href: "/#safety", columns: [] },
+  // Label shortened to "Safety" 2026-10-26, on request ("remove the needs").
+  { label: "Safety", href: "/#safety", columns: [] },
   // Contact Us replaced the inert "Careers" item in this slot (2026-10-08,
   // on request). Repointed the same day from the homepage's /#contact
   // section to the dedicated /contact page, on request — which also gives

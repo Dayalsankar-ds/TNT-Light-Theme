@@ -101,7 +101,7 @@ export default function CraneRentalContent() {
       </section>
 
       {/* B — CRANE TYPES */}
-      <section aria-labelledby="crane-focus-types" className="bg-tnt-gray">
+      <section aria-labelledby="crane-focus-types" className="bg-[#f7f7f7]">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
             <div className="max-w-2xl">

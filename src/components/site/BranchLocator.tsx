@@ -37,9 +37,8 @@
  */
 
 import dynamic from "next/dynamic";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search, Phone, Building2, MapPin } from "lucide-react";
-import RevealText from "./RevealText";
 import Button from "./Button";
 import type { BranchLocatorData } from "./branchLocatorData";
 import { CONFIRM_FALLBACK } from "./services";
@@ -66,11 +65,92 @@ const COUNTRIES = [
 
 type CountryId = (typeof COUNTRIES)[number]["id"];
 
+// NEAREST BRANCH BY ZIP / POSTAL CODE (2026-10-26, on request — "user has to
+// search by zip code"). A complete US ZIP (or ZIP+4) or Canadian postal code
+// — full "T2P 1J9" or just the "T2P" area — is looked up via /api/postal
+// (US Census ZCTAs + GeoNames FSAs), and the list switches from text-matching
+// to every branch sorted by straight-line distance, nearest selected. Miles
+// for a US code, kilometres for a Canadian one. Anything else (city, state,
+// brand, partial digits) keeps the original text filter below.
+const POSTAL_RE = /^(\d{5}(-?\d{4})?|[A-Za-z]\d[A-Za-z]( ?\d[A-Za-z]\d)?)$/;
+const normalizePostal = (q: string) => q.trim().toUpperCase().replace(/\s+/g, "");
+
+type Origin = {
+  query: string;
+  country: "US" | "CA";
+  code: string;
+  lat: number;
+  lng: number;
+  /** Which dataset placed the code — GeoNames (CC BY) must be credited. */
+  source: "census" | "geonames";
+};
+
+/** Great-circle distance in km (haversine). */
+function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
+  const r = Math.PI / 180;
+  const dLat = (bLat - aLat) * r;
+  const dLng = (bLng - aLng) * r;
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(aLat * r) * Math.cos(bLat * r) * Math.sin(dLng / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(h));
+}
+
 export default function BranchLocator({ branches }: BranchLocatorData) {
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState<CountryId>("all");
   const [selectedId, setSelectedId] = useState<string | null>("hou");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  // Last postal lookup. Keyed by the normalized query it answered, so a stale
+  // result for an earlier query is simply ignored — no reset needed when the
+  // query changes. `null` coords = that code isn't in the data.
+  const [lookup, setLookup] = useState<Origin | { query: string; notFound: true } | null>(null);
+
+  const postalQuery = POSTAL_RE.test(query.trim()) ? normalizePostal(query) : null;
+  const origin =
+    postalQuery && lookup && lookup.query === postalQuery && !("notFound" in lookup) ? lookup : null;
+  const postalNotFound =
+    !!postalQuery && !!lookup && lookup.query === postalQuery && "notFound" in lookup;
+
+  useEffect(() => {
+    if (!postalQuery) return;
+    let cancelled = false;
+    fetch(`/api/postal?code=${encodeURIComponent(postalQuery)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled) return;
+        if (d && typeof d.lat === "number") {
+          setLookup({
+            query: postalQuery,
+            country: d.country,
+            code: d.code,
+            lat: d.lat,
+            lng: d.lng,
+            source: d.source === "census" ? "census" : "geonames",
+          });
+          // Select the nearest branch in scope as the result lands (once per
+          // lookup, so the visitor can still click another one afterwards).
+          let best: string | null = null;
+          let bestKm = Infinity;
+          for (const b of branches) {
+            if (country !== "all" && b.country !== country) continue;
+            const km = distanceKm(d.lat, d.lng, b.lat, b.lng);
+            if (km < bestKm) {
+              bestKm = km;
+              best = b.id;
+            }
+          }
+          if (best) setSelectedId(best);
+        } else {
+          setLookup({ query: postalQuery, notFound: true });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLookup({ query: postalQuery, notFound: true });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [postalQuery, branches, country]);
 
   // Matches city, state (code or full name), region, operating brand, and
   // ZIP code (2026-09-29, on request — "search by using zip code"). ZIP only
@@ -78,6 +158,12 @@ export default function BranchLocator({ branches }: BranchLocatorData) {
   // `address` field, currently 16 of 44) — there's no fabricated ZIP to
   // search for the rest.
   const filtered = useMemo(() => {
+    if (origin) {
+      return branches
+        .filter((b) => country === "all" || b.country === country)
+        .map((b) => ({ ...b, km: distanceKm(origin.lat, origin.lng, b.lat, b.lng) }))
+        .sort((a, b) => a.km - b.km);
+    }
     const q = query.trim().toLowerCase();
     return branches.filter((b) => {
       if (country !== "all" && b.country !== country) return false;
@@ -90,7 +176,13 @@ export default function BranchLocator({ branches }: BranchLocatorData) {
         (b.address?.zip.toLowerCase().includes(q) ?? false)
       );
     });
-  }, [branches, query, country]);
+  }, [branches, query, country, origin]);
+
+  const formatDistance = (km: number) => {
+    const v = origin?.country === "CA" ? km : km * 0.621371;
+    const unit = origin?.country === "CA" ? "km" : "mi";
+    return `${v < 10 ? v.toFixed(1) : Math.round(v)} ${unit}`;
+  };
 
   const visibleIds = useMemo(() => new Set(filtered.map((b) => b.id)), [filtered]);
 
@@ -117,12 +209,11 @@ export default function BranchLocator({ branches }: BranchLocatorData) {
           <p className="font-body text-[13px] font-bold tracking-[0.18em] text-tnt-amber uppercase">
             North American Coverage
           </p>
-          <RevealText
-            as="h2"
-            barClassName="bg-tnt-amber"
-            text="Find Your Nearest Branch"
-            className="mt-3 font-display text-4xl tracking-wide text-black uppercase sm:text-5xl"
-          />
+          {/* Plain heading (2026-10-26, on request) — the RevealText bar-wipe
+              animation was removed; no other section animates its title. */}
+          <h2 className="mt-3 font-display text-4xl tracking-wide text-black uppercase sm:text-5xl">
+            Find Your Nearest Branch
+          </h2>
           <p className="mt-4 font-body text-base text-black/70 sm:text-lg">
             One fleet across the US and Canada. Pick a country or search a city
             or region to see the branch that mobilizes to your site.
@@ -180,8 +271,15 @@ export default function BranchLocator({ branches }: BranchLocatorData) {
             </div>
 
             <p aria-live="polite" className="sr-only">
-              {filtered.length} branches match.
+              {origin
+                ? `Branches sorted by distance from ${origin.code}.`
+                : `${filtered.length} branches match.`}
             </p>
+            {origin && (
+              <p className="mt-2 px-1 font-body text-[11px] text-black/55">
+                Nearest to <span className="font-semibold text-black">{origin.code}</span>
+              </p>
+            )}
 
             {/* `data-lenis-prevent`: Lenis owns the wheel globally, so without
                 it a wheel over this list smooth-scrolls the PAGE and the list
@@ -191,10 +289,16 @@ export default function BranchLocator({ branches }: BranchLocatorData) {
               data-lenis-prevent
               className="mt-3 max-h-64 space-y-1 overflow-y-auto overscroll-contain pr-1 lg:max-h-[26rem]"
             >
-              {filtered.length === 0 && (
+              {postalNotFound ? (
                 <li className="px-2 py-2 font-body text-sm text-black/50">
-                  No branches match “{query}”.
+                  We couldn’t find ZIP or postal code “{query.trim()}”.
                 </li>
+              ) : (
+                filtered.length === 0 && (
+                  <li className="px-2 py-2 font-body text-sm text-black/50">
+                    No branches match “{query}”.
+                  </li>
+                )
               )}
               {filtered.map((b) => (
                 <li key={b.id}>
@@ -216,14 +320,31 @@ export default function BranchLocator({ branches }: BranchLocatorData) {
                     />
                     <span className="min-w-0 flex-1">
                       <span className="block">{b.city}</span>
-                      <span className="block truncate font-body text-[11px] text-black/45">
+                      <span className="block truncate font-body text-[11px] font-normal text-black/45">
                         {b.brand}
                       </span>
+                      {"km" in b && typeof b.km === "number" && (
+                        <span className="block font-body text-[11px] font-semibold text-tnt-amber">
+                          {formatDistance(b.km)} away
+                        </span>
+                      )}
                     </span>
                   </button>
                 </li>
               ))}
             </ul>
+            {/* GeoNames data is CC BY 4.0 — credit it wherever it's used
+                (every Canadian code, and the US PO-Box / unique ZIPs the
+                Census list doesn't cover). */}
+            {origin?.source === "geonames" && (
+              <p className="mt-2 px-1 font-body text-[10px] text-black/40">
+                Postal codes ©{" "}
+                <a href="https://www.geonames.org/" className="underline" target="_blank" rel="noopener noreferrer">
+                  GeoNames
+                </a>
+                , CC BY 4.0
+              </p>
+            )}
           </div>
 
           {/* ── Map ────────────────────────────────────────────────────── */}
@@ -251,6 +372,20 @@ export default function BranchLocator({ branches }: BranchLocatorData) {
               <p className="mt-1.5 font-body text-[12px] font-semibold tracking-wide text-tnt-amber">
                 Operated by {selected.brand}
               </p>
+              {/* Distance from the searched ZIP / postal code (2026-10-26,
+                  on request) — only after a postal search, since there's no
+                  origin to measure from otherwise. */}
+              {origin && (
+                <p className="mt-2 flex items-center gap-1.5 font-body text-[13px] text-black/70">
+                  <MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-tnt-amber" />
+                  <span>
+                    <span className="font-semibold text-black">
+                      {formatDistance(distanceKm(origin.lat, origin.lng, selected.lat, selected.lng))}
+                    </span>{" "}
+                    from {origin.code}
+                  </span>
+                </p>
+              )}
 
               {/* Address / directions (2026-09-29, on request — "redirect
                   to gmap to check the exact distance from their current

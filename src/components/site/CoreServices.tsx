@@ -136,9 +136,12 @@ export default function CoreServices() {
                 className="relative flex h-full flex-col rounded-xl border p-5 transition-[translate,border-color,background-color] duration-300 ease-out group-hover:-translate-y-0.5 group-hover:border-tnt-amber group-hover:bg-tnt-amber/[0.06] focus-within:border-tnt-amber sm:p-6 border-black/12 bg-black/[0.03]"
               >
                 <div className="flex items-start justify-between gap-3">
-                  {/* Icon well */}
+                  {/* Icon well — solid gold square + black icon (2026-10-26, on
+                      request; was a 10% gold tint with a gold icon, too faint
+                      on the light card). Hover flips to black square + gold
+                      icon. */}
                   <span
-                    className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-tnt-amber/10 text-tnt-amber transition-colors duration-300 group-hover:bg-black group-hover:text-tnt-amber"
+                    className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-tnt-amber text-black transition-colors duration-300 group-hover:bg-black group-hover:text-tnt-amber"
                   >
                     <Image
                       src={s.glyph}
@@ -146,7 +149,7 @@ export default function CoreServices() {
                       width={24}
                       height={24}
                       unoptimized
-                      className="h-6 w-6 object-contain transition-[filter] duration-300 [filter:brightness(0)_saturate(100%)_invert(63%)_sepia(65%)_saturate(721%)_hue-rotate(352deg)_brightness(97%)_contrast(101%)] "
+                      className="h-6 w-6 object-contain transition-[filter] duration-300 [filter:brightness(0)] group-hover:[filter:brightness(0)_saturate(100%)_invert(63%)_sepia(65%)_saturate(721%)_hue-rotate(352deg)_brightness(97%)_contrast(101%)]"
                     />
                   </span>
                   <span className="flex items-center gap-2 pt-1">
@@ -224,22 +227,25 @@ export default function CoreServices() {
             SINGLE CTA (2026-09-30, on request — "remove that talk to
             engineer from the strip banner"): "Talk to an engineer" (the
             secondary #contact button) removed; "Request a quote" is now the
-            panel's only action. */}
-        <div className="mt-12 overflow-hidden rounded-2xl bg-tnt-amber sm:mt-14">
+            panel's only action.
+            BLACK PANEL (2026-10-26, on request): black background, gold
+            heading, white subtext, and the gold onDark button — was a gold
+            panel with black text and a black button. */}
+        <div className="mt-12 overflow-hidden rounded-2xl bg-black sm:mt-14">
           <div className="flex flex-col gap-7 p-8 sm:p-10 lg:flex-row lg:items-center lg:justify-between lg:p-12">
             <div>
-              <p className="font-display text-2xl leading-tight tracking-wide text-black uppercase sm:text-3xl lg:text-4xl">
+              <p className="font-display text-2xl leading-tight tracking-wide text-tnt-amber uppercase sm:text-3xl lg:text-4xl">
                 One partner.
                 <br />
                 From lift planning to final set.
               </p>
-              <p className="mt-3 max-w-lg font-body text-sm leading-relaxed text-black/70 sm:text-base">
+              <p className="mt-3 max-w-lg font-body text-sm leading-relaxed text-white sm:text-base">
                 Tell us the load, the site, and the window. We&rsquo;ll scope the
                 rest.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">
-              <Button href="#quote" variant="primary">
+              <Button href="#quote" variant="primary" onDark>
                 Request a quote
               </Button>
             </div>

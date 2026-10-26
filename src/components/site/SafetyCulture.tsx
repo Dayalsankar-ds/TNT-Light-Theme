@@ -71,7 +71,7 @@ export default function SafetyCulture() {
   return (
     <section
       id="safety"
-      className="scroll-mt-32 bg-tnt-gray"
+      className="scroll-mt-32 bg-[#f7f7f7]"
     >
       <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
         <div className="grid items-center gap-10 lg:grid-cols-[auto_1fr] lg:gap-16">
@@ -81,7 +81,7 @@ export default function SafetyCulture() {
             <img
               src="/brand/icare-badge.png"
               alt="iCARE safety program badge"
-              className="h-32 w-32 sm:h-40 sm:w-40"
+              className="h-32 w-32 object-contain sm:h-40 sm:w-40"
             />
           </Reveal>
 

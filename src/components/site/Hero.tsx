@@ -226,8 +226,8 @@ const LANDING_MARGIN = 24;
  *  height, so the post-collapse scrollY 0 is the same view. */
 const LANDING_OFFSET = CHROME_H - LANDING_MARGIN;
 /** Collapse even if the auto-scroll never reports completion (a wheel/touch
- *  mid-flight interrupts it). Comfortably past its 1.2s duration. */
-const COLLAPSE_FALLBACK_MS = 1600;
+ *  mid-flight interrupts it). Comfortably past its 1.5s duration. */
+const COLLAPSE_FALLBACK_MS = 1900;
 
 /** Scrolls to #family (the Family-of-companies logo strip) — see the
  *  LANDING SPOT note above for the back-and-forth that settled here. Lenis
@@ -241,7 +241,8 @@ function scrollToFamilyStrip(onComplete: () => void) {
 
   const lenis = getLenis();
   if (lenis) {
-    lenis.scrollTo(target, { duration: 1.2, onComplete });
+    // 1.5s (was 1.2s — slowed a little 2026-10-26, on request).
+    lenis.scrollTo(target, { duration: 1.5, onComplete });
   } else {
     window.scrollTo({ top: target, behavior: "smooth" });
     window.setTimeout(onComplete, 700);

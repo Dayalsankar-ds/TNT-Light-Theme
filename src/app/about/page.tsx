@@ -195,7 +195,7 @@ export default function AboutPage() {
 
       {/* 02b — TIMELINE ("The route so far"), its own grey band so it reads
           apart from the white story above. */}
-      <section aria-label="TNT timeline" className="bg-tnt-gray">
+      <section aria-label="TNT timeline" className="bg-[#f7f7f7]">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
           <Timeline />
         </div>
@@ -362,7 +362,7 @@ export default function AboutPage() {
       </section>
 
       {/* 06 — SAFETY & iCARE */}
-      <section id="safety" aria-labelledby="safety-heading" className="scroll-mt-32 bg-tnt-gray">
+      <section id="safety" aria-labelledby="safety-heading" className="scroll-mt-32 bg-[#f7f7f7]">
         <div className="mx-auto grid max-w-7xl gap-12 px-4 py-20 sm:px-6 sm:py-28 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-20 lg:px-8">
           <div className="flex items-center justify-center rounded-xl bg-white p-10 sm:p-14">
             <Image

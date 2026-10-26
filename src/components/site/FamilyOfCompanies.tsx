@@ -39,7 +39,6 @@ const COMPANIES: { name: string; logo: string; logoText?: string; region: string
   {
     name: "TNT Crane & Rigging USA",
     logo: "/brand/tnt.svg",
-    logoText: "USA",
     region: "South Central United States",
     area: "Texas, Louisiana, Oklahoma",
   },
@@ -75,7 +74,6 @@ const COMPANIES: { name: string; logo: string; logoText?: string; region: string
   {
     name: "TNT Crane & Rigging Canada",
     logo: "/brand/tnt.svg",
-    logoText: "Canada",
     region: "Alberta",
     area: "Calgary, Edmonton, Fort McMurray",
   },
@@ -206,7 +204,7 @@ export default function FamilyOfCompanies() {
                 <img src={c.logo} alt={c.name} className={`h-11 w-auto max-w-full self-start object-contain sm:h-12 ${lone ? "sm:self-center" : ""}`} />
               )}
               <div className="mt-auto">
-                <p className="font-body text-xs font-semibold tracking-[0.16em] text-black/55 uppercase">
+                <p className="font-body text-xs font-normal tracking-[0.16em] text-black/55 uppercase">
                   A TNT Crane &amp; Rigging company
                 </p>
                 <p className="mt-2 font-body text-lg font-semibold text-black">{c.region}</p>

@@ -36,14 +36,14 @@ export default function TopInfoBar() {
         {/* Where we are + how to reach us */}
         <div className="flex items-center gap-7">
           <span className="flex items-center gap-2 font-body text-[12px] tracking-wide text-white/70">
-            <Icon name="pin" className="h-4 w-4 shrink-0 text-tnt-amber" />
+            <Icon name="pin" variant="filled" className="h-4 w-4 shrink-0 text-tnt-amber" />
             Houston, TX
           </span>
           <a
             href="mailto:info@tntcrane.com"
             className="flex items-center gap-2 font-body text-[12px] tracking-wide text-white/70 transition-colors hover:text-tnt-amber"
           >
-            <Icon name="mail" className="h-4 w-4 shrink-0 text-tnt-amber" />
+            <Icon name="mail" variant="filled" className="h-4 w-4 shrink-0 text-tnt-amber" />
             info@tntcrane.com
           </a>
           {/* Phone, below `2xl` only — the inverse of the nav rail's
@@ -54,7 +54,7 @@ export default function TopInfoBar() {
             href="tel:+18007992505"
             className="flex items-center gap-2 font-body text-[12px] tracking-wide text-white/70 transition-colors hover:text-tnt-amber 2xl:hidden"
           >
-            <Icon name="payment" className="h-4 w-4 shrink-0 text-tnt-amber" />
+            <Icon name="payment" variant="filled" className="h-4 w-4 shrink-0 text-tnt-amber" />
             1-800-799-2505
           </a>
         </div>
@@ -68,7 +68,7 @@ export default function TopInfoBar() {
                 aria-label={s.name}
                 className="flex h-8 w-8 items-center justify-center rounded text-white/60 transition-colors hover:text-tnt-amber focus-visible:ring-2 focus-visible:ring-tnt-amber focus-visible:outline-none"
               >
-                <Icon name={s.icon} className="h-[18px] w-[18px]" strokeWidth={1.6} />
+                <Icon name={s.icon} variant="filled" className="h-[18px] w-[18px]" />
               </a>
             </li>
           ))}

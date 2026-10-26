@@ -137,7 +137,12 @@ export default function EquipmentGuide() {
   const selectType = useCallback((i: number) => setActiveType(i), []);
 
   return (
-    <section id="fleet-guide" className="bg-tnt-gray text-black">
+    <section id="fleet-guide" className="bg-[#f7f7f7] text-black">
+      {/* Lighter grey (2026-10-26, on request — "the background gray seems
+          too high"): #f7f7f7, the same grey as the Full-Scope Capability
+          cards and the About Us stat panel, instead of bg-tnt-gray
+          (#eeeeee). Every other grey section followed the same day
+          (Safety, Request Quote, About, Services, Contact, Crane Rental). */}
       <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32 lg:px-8">
         {/* TWO-SIDE LAYOUT (2026-09-18, on request: "divide that section in
             two, A side and B side — A side is left side which needs to

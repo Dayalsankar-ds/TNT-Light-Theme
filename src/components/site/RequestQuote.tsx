@@ -25,16 +25,33 @@
  * their own optional fields (they used to live only in the description
  * placeholder) — a visitor who knows them saves a call; one who doesn't
  * shouldn't be blocked.
+ *
+ * FIELDS MATCH THE LIVE SITE (2026-10-26, on request — "bring the same
+ * content... no need to show any unnecessary information"): the form now asks
+ * exactly what tntcrane.com/contact's "Contact TNT" form asks, in its order:
+ * Name, Email, Phone, Company/Organization, Project Name, Project Location
+ * (all required); Services Required (optional, the live site's five); Start
+ * Date and Estimated Duration (required); File Upload (optional,
+ * image/video/audio like the live form); job details (required); and the live
+ * SMS-consent wording. Dropped: jobsite ZIP, crane type, load and radius. The
+ * CRANE_TYPES / POSTAL_PATTERN / field-style exports stay — /contact's
+ * ContactForm still imports them.
  */
 
 import { useState, type FormEvent } from "react";
 import { Eyebrow } from "./primitives";
 import Button from "./Button";
 import RevealText from "./RevealText";
-import { SERVICES as CATALOG } from "./services";
 
-// The site's service catalog (services.ts) — one list site-wide.
-const SERVICES = CATALOG.map((s) => s.label);
+// Exactly the live tntcrane.com form's "Services Required" options, in its
+// order (not services.ts's six-item catalog).
+const SERVICES = [
+  "Crane Rental",
+  "Specialized Rigging",
+  "Machinery Moving",
+  "Industrial Storage",
+  "Engineering",
+];
 
 // The six classes in the nav's Load Chart menu, so the form and the fleet
 // speak the same taxonomy. "Not sure" is a real answer — a rep will recommend.
@@ -77,6 +94,13 @@ export function Opt() {
   );
 }
 
+// LARGER TYPE ON THIS FORM ONLY (2026-10-26, on request — "it seems small"):
+// labels 11→13px, typed text 14→16px (also stops iOS zooming into a field
+// under 16px), boxes a touch taller. The shared `field` / `label` exports
+// above stay as they are for /contact's ContactForm.
+const qField = field.replace("px-4 py-3", "px-4 py-3.5").replace("text-sm", "text-base");
+const qLabel = label.replace("text-[11px]", "text-[13px]");
+
 export default function RequestQuote() {
   const [selected, setSelected] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
@@ -93,7 +117,7 @@ export default function RequestQuote() {
   };
 
   return (
-    <section id="quote" className="scroll-mt-32 bg-tnt-gray">
+    <section id="quote" className="scroll-mt-32 bg-[#f7f7f7]">
       <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
         <div className="grid gap-12 lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-16">
           {/* Left — statement */}
@@ -133,110 +157,52 @@ export default function RequestQuote() {
               onSubmit={onSubmit}
               className="rounded-2xl border border-black/10 bg-white p-6 sm:p-8"
             >
-              <p className="mb-5 font-body text-[13px] text-tnt-body">
+              <p className="mb-5 font-body text-sm text-tnt-body">
                 <span aria-hidden="true" className="text-tnt-maroon">*</span>{" "}
                 Required field
               </p>
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
-                  <label htmlFor="q-name" className={label}>
-                    Full name<Req />
+                  <label htmlFor="q-name" className={qLabel}>
+                    Name<Req />
                   </label>
-                  <input id="q-name" name="name" required autoComplete="name" className={`mt-2 ${field}`} />
+                  <input id="q-name" name="name" required autoComplete="name" className={`mt-2 ${qField}`} />
                 </div>
                 <div>
-                  <label htmlFor="q-company" className={label}>
-                    Company
-                  </label>
-                  <input id="q-company" name="company" autoComplete="organization" className={`mt-2 ${field}`} />
-                </div>
-                <div>
-                  <label htmlFor="q-email" className={label}>
+                  <label htmlFor="q-email" className={qLabel}>
                     Email<Req />
                   </label>
-                  <input id="q-email" name="email" type="email" required autoComplete="email" className={`mt-2 ${field}`} />
+                  <input id="q-email" name="email" type="email" required autoComplete="email" className={`mt-2 ${qField}`} />
                 </div>
                 <div>
-                  <label htmlFor="q-phone" className={label}>
+                  <label htmlFor="q-phone" className={qLabel}>
                     Phone<Req />
                   </label>
-                  <input id="q-phone" name="phone" type="tel" required autoComplete="tel" className={`mt-2 ${field}`} />
-                </div>
-              </div>
-
-              {/* Job details — where, what, and (if known) how big */}
-              <div className="mt-6 grid gap-5 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="q-zip" className={label}>
-                    Jobsite ZIP / postal code<Req />
-                  </label>
-                  <input
-                    id="q-zip"
-                    name="jobsiteZip"
-                    required
-                    autoComplete="postal-code"
-                    pattern={POSTAL_PATTERN}
-                    title="5-digit ZIP (e.g. 77001) or Canadian postal code (e.g. T2P 1J9)"
-                    placeholder="e.g. 77001"
-                    className={`mt-2 ${field}`}
-                  />
+                  <input id="q-phone" name="phone" type="tel" required autoComplete="tel" className={`mt-2 ${qField}`} />
                 </div>
                 <div>
-                  <label htmlFor="q-crane" className={label}>
-                    Crane type<Req />
+                  <label htmlFor="q-company" className={qLabel}>
+                    Company/Organization<Req />
                   </label>
-                  <select
-                    id="q-crane"
-                    name="craneType"
-                    required
-                    defaultValue=""
-                    className={`mt-2 ${field}`}
-                  >
-                    <option value="" disabled>
-                      Select a crane type
-                    </option>
-                    {CRANE_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
+                  <input id="q-company" name="company" required autoComplete="organization" className={`mt-2 ${qField}`} />
                 </div>
                 <div>
-                  <label htmlFor="q-load" className={label}>
-                    Load weight (tons)<Opt />
+                  <label htmlFor="q-project" className={qLabel}>
+                    Project name<Req />
                   </label>
-                  <input
-                    id="q-load"
-                    name="loadTons"
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    step="any"
-                    placeholder="e.g. 40"
-                    className={`mt-2 ${field}`}
-                  />
+                  <input id="q-project" name="projectName" required className={`mt-2 ${qField}`} />
                 </div>
                 <div>
-                  <label htmlFor="q-radius" className={label}>
-                    Lift radius (ft)<Opt />
+                  <label htmlFor="q-location" className={qLabel}>
+                    Project location<Req />
                   </label>
-                  <input
-                    id="q-radius"
-                    name="radiusFt"
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    step="any"
-                    placeholder="e.g. 80"
-                    className={`mt-2 ${field}`}
-                  />
+                  <input id="q-location" name="projectLocation" required className={`mt-2 ${qField}`} />
                 </div>
               </div>
 
               {/* Services — multi-select chips */}
               <fieldset className="mt-6">
-                <legend className={label}>Services required</legend>
+                <legend className={qLabel}>Services required</legend>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {SERVICES.map((s) => {
                     const on = selected.includes(s);
@@ -246,7 +212,7 @@ export default function RequestQuote() {
                         type="button"
                         onClick={() => toggle(s)}
                         aria-pressed={on}
-                        className={`rounded-full border px-4 py-2 font-body text-sm font-semibold transition-colors ${
+                        className={`rounded-full border px-4 py-2 font-body text-[15px] font-semibold transition-colors ${
                           on
                             ? "border-tnt-amber bg-tnt-amber text-black"
                             : "border-black/15 text-tnt-body hover:border-black/40 hover:text-black"
@@ -261,61 +227,60 @@ export default function RequestQuote() {
 
               <div className="mt-6 grid gap-5 sm:grid-cols-2">
                 <div>
-                  <label htmlFor="q-start" className={label}>
-                    Start date
+                  <label htmlFor="q-start" className={qLabel}>
+                    Start date<Req />
                   </label>
-                  <input id="q-start" name="start" type="date" className={`mt-2 ${field}`} />
+                  <input id="q-start" name="start" type="date" required className={`mt-2 ${qField}`} />
                 </div>
                 <div>
-                  <label htmlFor="q-duration" className={label}>
-                    Estimated duration
+                  <label htmlFor="q-duration" className={qLabel}>
+                    Estimated duration<Req />
                   </label>
-                  <input
-                    id="q-duration"
-                    name="duration"
-                    placeholder="e.g. 3 days"
-                    className={`mt-2 ${field}`}
-                  />
+                  <input id="q-duration" name="duration" required className={`mt-2 ${qField}`} />
                 </div>
               </div>
 
               <div className="mt-6">
-                <label htmlFor="q-desc" className={label}>
-                  Project description
-                </label>
-                <textarea
-                  id="q-desc"
-                  name="description"
-                  rows={4}
-                  placeholder="Site conditions, access, lift height, anything else…"
-                  className={`mt-2 ${field} resize-y`}
-                />
-              </div>
-
-              <div className="mt-6">
-                <label htmlFor="q-file" className={label}>
-                  Attach a drawing or spec (optional)
+                <label htmlFor="q-file" className={qLabel}>
+                  File upload<Opt />
                 </label>
                 <input
                   id="q-file"
                   name="file"
                   type="file"
-                  className="mt-2 block w-full font-body text-sm text-tnt-body file:mr-4 file:rounded-md file:border-0 file:bg-black file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-tnt-navy"
+                  accept="audio/*,video/*,image/*"
+                  className="mt-2 block w-full font-body text-base text-tnt-body file:mr-4 file:rounded-md file:border-0 file:bg-black file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-tnt-navy"
                 />
               </div>
 
-              <label className="mt-6 flex items-start gap-3 font-body text-[13px] leading-relaxed text-tnt-body">
+              <div className="mt-6">
+                <label htmlFor="q-desc" className={qLabel}>
+                  Job details<Req />
+                </label>
+                <textarea
+                  id="q-desc"
+                  name="description"
+                  rows={4}
+                  required
+                  placeholder="Please include as many job details as possible"
+                  className={`mt-2 ${qField} resize-y`}
+                />
+              </div>
+
+              <label className="mt-6 flex items-start gap-3 font-body text-sm leading-relaxed text-tnt-body">
                 <input type="checkbox" name="consent" className="mt-1 h-4 w-4 accent-tnt-amber" />
                 <span>
-                  I agree to receive text messages from TNT Crane &amp; Rigging
-                  about my request. Reply STOP to opt out. Message &amp; data
-                  rates may apply.
+                  By checking this box, I agree to receive conversational text
+                  messages from TNT Crane and Rigging related services. Reply STOP
+                  to opt-out at any time. For assistance, text HELP. Message and
+                  data rates may apply. Message frequency varies. Please view our
+                  Privacy Policy and Terms &amp; Conditions for more information.
                 </span>
               </label>
 
               <div className="mt-8">
-                <Button type="submit" variant="primary">
-                  Submit request
+                <Button type="submit" variant="primary" className="text-base!">
+                  Contact TNT
                 </Button>
               </div>
             </form>

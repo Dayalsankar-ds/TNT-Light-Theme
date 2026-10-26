@@ -216,12 +216,19 @@ export default function SiteNav() {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  // Crossing to `lg` hides the mobile sheet by CSS, but the state stays true —
+  // DESKTOP NAV FROM `xl` (1280px), NOT `lg` (2026-10-26, on request — "make
+  // it responsive for all the screen sizes"): the full row of links plus the
+  // Get a Quote rail needs ~1,160px, so between 1024 and ~1,160px "For Sale"
+  // and "Get a Quote" ran off the right edge (150px over at 1024). Below xl
+  // the ☰ menu is used instead. The menu list, quote rail, ☰ button, mega
+  // panel, mobile sheet and the matchMedia below all switch at xl together.
+  //
+  // Crossing to `xl` hides the mobile sheet by CSS, but the state stays true —
   // which would leave the body scroll lock below applied with nothing on screen
   // to explain it, i.e. a page that simply cannot scroll. Close it on the
   // breakpoint itself rather than trusting the sheet to be dismissed first.
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
+    const mq = window.matchMedia("(min-width: 1280px)");
     const sync = () => {
       if (mq.matches) setMobileOpen(false);
     };
@@ -312,7 +319,7 @@ export default function SiteNav() {
               with a caret that opens on hover; a flat item with an href is a
               plain link; a flat item with `href: null` has no destination yet
               and renders as inert text rather than a link to nowhere. */}
-          <ul className="hidden items-center gap-0.5 lg:flex">
+          <ul className="hidden items-center gap-0.5 xl:flex">
             {visibleNavGroups.map((g) => {
               const isOpen = shownGroup === g.label;
               const isCurrent = current === g.label;
@@ -399,7 +406,7 @@ export default function SiteNav() {
               brings the row to ~933px and it fits again. Nothing is lost:
               TopInfoBar carries the number below `xl` instead, and above `xl`
               this rail is unchanged. */}
-          <div className="hidden items-center gap-5 lg:flex">
+          <div className="hidden items-center gap-5 xl:flex">
             <a
               href="tel:+18007992505"
               className="hidden font-body text-base font-semibold whitespace-nowrap text-white transition-colors hover:text-tnt-amber 2xl:block"
@@ -422,7 +429,7 @@ export default function SiteNav() {
           <button
             type="button"
             onClick={() => setMobileOpen((v) => !v)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-md text-white lg:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-md text-white xl:hidden"
             aria-expanded={mobileOpen}
             aria-controls="mobile-menu"
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
@@ -478,7 +485,7 @@ export default function SiteNav() {
             return (
               <div
                 key={g.label}
-                className="absolute inset-x-0 top-full hidden border-t border-tnt-amber/40 bg-white shadow-2xl shadow-black/20 lg:block"
+                className="absolute inset-x-0 top-full hidden border-t border-tnt-amber/40 bg-white shadow-2xl shadow-black/20 xl:block"
                 onMouseEnter={clearHover}
               >
                 {/* Gaps and rails were tightened on 2026-08-04 to buy width
@@ -592,7 +599,7 @@ export default function SiteNav() {
         // trackpad at a narrow window — but the sheet should scroll itself in
         // every input mode, not just the one it was designed for.
         data-lenis-prevent
-        className={`overflow-y-auto overscroll-contain border-t border-black/10 bg-white lg:hidden ${
+        className={`overflow-y-auto overscroll-contain border-t border-black/10 bg-white xl:hidden ${
           mobileOpen ? "max-h-[calc(100vh-5rem)]" : "max-h-0 overflow-hidden"
         } transition-[max-height] duration-300`}
       >

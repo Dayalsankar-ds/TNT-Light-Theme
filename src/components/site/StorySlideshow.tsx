@@ -315,7 +315,11 @@ export default function StorySlideshow() {
             </div>
           </div>
 
-          <div className="pointer-events-auto absolute inset-y-0 right-4 w-[92%] max-w-md overflow-hidden bg-white shadow-2xl sm:right-6 lg:right-8 lg:max-w-xl">
+          {/* Panel grey (2026-10-26, on request) = the Full-Scope Capability
+              cards' bg-black/[0.03] on white, as a solid #f7f7f7 — the
+              panel sits over a photo, so a translucent tint would let it
+              show through. Was bg-white. */}
+          <div className="pointer-events-auto absolute inset-y-0 right-4 w-[92%] max-w-md overflow-hidden bg-[#f7f7f7] shadow-2xl sm:right-6 lg:right-8 lg:max-w-xl">
             <dl className="grid h-full grid-cols-2">
               {SLIDES.map((s, i) => {
                 const isActive = i === index;
@@ -352,13 +356,19 @@ export default function StorySlideshow() {
                       />
                     ) : (
                       <span
-                        className={`flex h-8 w-8 items-center justify-center rounded-full border sm:h-9 sm:w-9 ${
-                          isActive
-                            ? "border-white text-white"
-                            : "border-tnt-amber text-tnt-amber"
+                        className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors sm:h-9 sm:w-9 ${
+                          isActive ? "bg-tnt-amber text-black" : "bg-black/[0.08] text-black/60"
                         }`}
                       >
-                        <Icon name={s.icon} className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2.4} />
+                        {/* Grey icon (black/60, a step softer than the black
+                            number) in a grey circle; on the highlighted
+                            (black) card the circle turns solid gold and the
+                            icon black (2026-10-26, on request). The grey is black/8% — a step darker
+                            than the panel's #f7f7f7 so it still reads. Before
+                            that: no circle off-highlight, a gold circle on
+                            every card, and originally a gold (white when
+                            active) outline circle. */}
+                        <Icon name={s.icon} variant="filled" className="h-4 w-4 sm:h-5 sm:w-5" />
                       </span>
                     )}
                     <dt className="sr-only">{s.label}</dt>

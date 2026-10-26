@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Open_Sans } from "next/font/google";
+import { Poppins } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import SiteNav from "@/components/site/SiteNav";
@@ -7,19 +7,22 @@ import SiteFooter from "@/components/site/SiteFooter";
 import SmoothScroll from "@/components/SmoothScroll";
 import ChatWidget from "@/components/site/ChatWidget";
 
-// Single text face: page default (`font-sans`) and `font-body`.
-const openSans = Open_Sans({
-  variable: "--font-open-sans",
+// TYPOGRAPHY FORMAT (2026-10-26, on request — "this is the format we are going
+// to follow on this entire website... follow this strictly"): Poppins for body
+// text (400/500/600/700), Impact for h1–h3. See globals.css for the scale and
+// element rules. Poppins comes through next/font (self-hosted) rather than
+// the spec's Google Fonts @import — same family and weights. Replaces Open
+// Sans (body), Poppins-as-display, and the Anton test on the Family heading.
+const poppins = Poppins({
+  variable: "--font-poppins",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-// Display face (`font-display`), replacing the SF Pro system stack 2026-07-30.
-// Self-hosted from Assets/Impact.ttf — commercially licensed; webfont-license
-// coverage confirmed with the user before wiring this in. Single static
-// weight, so no bold variant exists to select — the old forced 700 override
-// on .font-display is dropped in globals.css to avoid the browser
-// faux-bolding an already-heavy face.
+// Impact, self-hosted from fonts/Impact.ttf (commercially licensed;
+// webfont-license coverage confirmed with the user 2026-07-30). Single
+// static weight — the spec's display weight is 400, so no faux-bold.
 const impact = localFont({
   src: "./fonts/Impact.ttf",
   variable: "--font-impact",
@@ -42,7 +45,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${openSans.variable} ${impact.variable} h-full antialiased`}
+      className={`${poppins.variable} ${impact.variable} h-full antialiased`}
     >
       <body className="min-h-full">
         {/* Inertial smooth scroll + single GSAP rAF loop for all scroll motion */}

@@ -64,7 +64,7 @@ export default async function ContactPage({
       <section
         id="contact-hero"
         aria-labelledby="contact-hero-heading"
-        className="-mt-10 scroll-mt-32 bg-tnt-gray lg:mt-0"
+        className="-mt-10 scroll-mt-32 bg-[#f7f7f7] lg:mt-0"
       >
         {/* Three grid children so phones get intro → form → details (the
             form reaches the first screen), while lg+ stacks intro and

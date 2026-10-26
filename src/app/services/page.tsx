@@ -193,7 +193,7 @@ export default function ServicesPage() {
       </section>
 
       {/* 03 — CORE SERVICES */}
-      <section id="core-services" aria-labelledby="core-heading" className="scroll-mt-32 bg-tnt-gray">
+      <section id="core-services" aria-labelledby="core-heading" className="scroll-mt-32 bg-[#f7f7f7]">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
           <div className="max-w-3xl">
             <Eyebrow>Core Services</Eyebrow>
@@ -438,7 +438,7 @@ export default function ServicesPage() {
       </section>
 
       {/* 08 — PROJECTS */}
-      <section aria-labelledby="projects-heading" className="bg-tnt-gray">
+      <section aria-labelledby="projects-heading" className="bg-[#f7f7f7]">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
           <div className="max-w-2xl">
             <Eyebrow>Projects</Eyebrow>

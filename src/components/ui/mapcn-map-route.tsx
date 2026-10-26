@@ -271,6 +271,18 @@ export function BranchMap({
       map.resize();
     });
 
+    // Operating-company logo shown above the selected / hovered pin
+    // (2026-10-26, on request). Brands without their own mark (both TNT
+    // companies) use the TNT logo. Unknown brand → no logo tag.
+    const BRAND_LOGO: Record<string, string> = {
+      "TNT Crane & Rigging": "/brand/tnt.svg",
+      "TNT Crane & Rigging Canada": "/brand/tnt.svg",
+      "Southway Crane & Rigging": "/brand/southway.svg",
+      "RMS Cranes": "/brand/rms-cranes.svg",
+      "JMS Crane & Rigging": "/brand/jms.svg",
+      "Eagle West Crane & Rigging": "/brand/eagle-west.svg",
+    };
+
     for (const b of branchList) {
       const el = document.createElement("button");
       el.type = "button";
@@ -280,7 +292,10 @@ export function BranchMap({
         "aria-label",
         `${b.city} — ${b.region}, operated by ${b.brand}`,
       );
-      el.innerHTML = `<span class="tnt-marker__pulse" aria-hidden="true"></span><span class="tnt-marker__dot" aria-hidden="true"></span>`;
+      const logo = BRAND_LOGO[b.brand];
+      el.innerHTML =
+        `<span class="tnt-marker__pulse" aria-hidden="true"></span><span class="tnt-marker__dot" aria-hidden="true"></span>` +
+        (logo ? `<span class="tnt-marker__logo" aria-hidden="true"><img src="${logo}" alt="" /></span>` : "");
       el.addEventListener("click", (e) => {
         e.stopPropagation();
         onSelectRef.current(b.id);

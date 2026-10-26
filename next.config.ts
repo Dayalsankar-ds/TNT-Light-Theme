@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
   // The LAN IP changes when the machine gets a new lease; these cover the
   // private ranges rather than pinning one address. Dev-only setting.
   allowedDevOrigins: ["10.*.*.*", "172.16.*.*", "192.168.*.*", "localhost"],
+  // The full Canadian postal-code file is read with fs at runtime (not
+  // imported), so make sure it ships with the lookup route.
+  outputFileTracingIncludes: {
+    "/api/postal": ["./src/lib/geo/ca-postal-full.json.gz"],
+  },
   images: {
     // Needed by heroSequenceManualScroll.ts's optimizedFramePath (the
     // manual-scroll hero variant, copied 2026-09-08). The /_next/image
